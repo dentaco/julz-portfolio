@@ -1,5 +1,7 @@
 gsap.registerPlugin(ScrollTrigger);
 
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 document.getElementById('year').textContent = new Date().getFullYear();
 
 /* ============ LENIS SMOOTH SCROLL ============ */
@@ -32,6 +34,12 @@ setTimeout(() => {
 
 /* ============ HERO TITLE REVEAL ============ */
 function playHero() {
+  if (reduceMotion) {
+    gsap.set('.hero-title .word', { y: '0%' });
+    gsap.set('.hero-badge, .hero-sub, .hero-cta', { opacity: 1, y: 0 });
+    gsap.set('.badge-pill, .sticker', { opacity: 1, scale: 1 });
+    return;
+  }
   gsap.to('.hero-title .word', {
     y: '0%', duration: 1.1, ease: 'power4.out', stagger: 0.06, delay: 0.1
   });
@@ -45,13 +53,24 @@ function playHero() {
 gsap.set('.hero-badge, .hero-sub, .hero-cta', { opacity: 0, y: 20 });
 gsap.set('.badge-pill, .sticker', { opacity: 0, scale: .5 });
 
-/* ============ FLOATING ELEMENTS ============ */
-document.querySelectorAll('[data-float]').forEach((el, i) => {
-  gsap.to(el, {
-    y: '+=14', duration: 2.4 + (i % 3) * .4, ease: 'sine.inOut',
-    repeat: -1, yoyo: true, delay: i * .15
+/* Parallax the hero copy gently as it scrolls away — adds depth over the
+   drifting blobs without pulling focus. */
+if (!reduceMotion) {
+  gsap.to('.hero-content', {
+    yPercent: -14, ease: 'none',
+    scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: .6 }
   });
-});
+}
+
+/* ============ FLOATING ELEMENTS ============ */
+if (!reduceMotion) {
+  document.querySelectorAll('[data-float]').forEach((el, i) => {
+    gsap.to(el, {
+      y: '+=14', duration: 2.4 + (i % 3) * .4, ease: 'sine.inOut',
+      repeat: -1, yoyo: true, delay: i * .15
+    });
+  });
+}
 
 /* ============ CUSTOM CURSOR ============ */
 const cursorDot = document.querySelector('.cursor-dot');
@@ -122,12 +141,45 @@ mobileMenu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => 
 }));
 
 /* ============ SCROLL REVEALS ============ */
-gsap.utils.toArray('.reveal-up').forEach((el) => {
-  gsap.to(el, {
-    opacity: 1, y: 0, duration: 1, ease: 'power3.out',
-    scrollTrigger: { trigger: el, start: 'top 88%' }
+if (reduceMotion) {
+  gsap.set('.reveal-up', { opacity: 1, y: 0 });
+} else {
+  gsap.utils.toArray('.reveal-up').forEach((el) => {
+    gsap.to(el, {
+      opacity: 1, y: 0, duration: 1, ease: 'power3.out',
+      scrollTrigger: { trigger: el, start: 'top 88%' }
+    });
   });
-});
+}
+
+/* ============ SCROLL-VELOCITY MARQUEE ============ */
+/* The word ribbon drifts on its own, then speeds up and skews with scroll
+   velocity — faster as you scroll, easing back to a calm baseline at rest. */
+(() => {
+  const marquee = document.querySelector('.marquee');
+  const track = document.querySelector('.marquee-track');
+  if (!marquee || !track || reduceMotion) return;
+
+  marquee.classList.add('js-driven');
+  let half = track.scrollWidth / 2 || 1;
+  const recalc = () => { half = track.scrollWidth / 2 || 1; };
+  window.addEventListener('resize', recalc);
+
+  let x = 0;
+  let lastY = window.scrollY;
+  let skew = 0;
+  gsap.ticker.add(() => {
+    const y = window.scrollY;
+    const dv = y - lastY;
+    lastY = y;
+    const speed = 0.6 + Math.min(Math.abs(dv) * 0.22, 7);
+    x -= speed;
+    if (x <= -half) x += half;
+    const targetSkew = gsap.utils.clamp(-10, 10, dv * 0.5);
+    skew += (targetSkew - skew) * 0.08;
+    track.style.transform = `translateX(${x}px) skewX(${skew.toFixed(2)}deg)`;
+  });
+})();
 
 /* ============ WORK DECK ============ */
 (() => {
@@ -253,16 +305,29 @@ gsap.utils.toArray('.reveal-up').forEach((el) => {
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && activeCard) closeCard(activeCard); });
 })();
 
-/* ============ HERO BLOB PARALLAX ============ */
-if (hasFineCursor) {
+/* ============ HERO BLOBS — ambient breathing + pointer parallax ============ */
+if (!reduceMotion) {
   const blobs = document.querySelectorAll('.hero-blob');
-  window.addEventListener('mousemove', (e) => {
-    const xRatio = e.clientX / window.innerWidth - .5;
-    const yRatio = e.clientY / window.innerHeight - .5;
-    blobs.forEach((b, i) => {
-      gsap.to(b, { x: xRatio * (30 + i * 20), y: yRatio * (30 + i * 20), duration: 1.2, ease: 'power2.out' });
+
+  // slow autonomous scale/rotate so the hero breathes even without a mouse.
+  // (scale/rotation are independent of the x/y the parallax drives, so gsap
+  // composes both onto the same element without fighting.)
+  blobs.forEach((b, i) => {
+    gsap.to(b, {
+      scale: 1.15, rotation: i % 2 ? 8 : -8,
+      duration: 7 + i * 1.5, ease: 'sine.inOut', repeat: -1, yoyo: true
     });
   });
+
+  if (hasFineCursor) {
+    window.addEventListener('mousemove', (e) => {
+      const xRatio = e.clientX / window.innerWidth - .5;
+      const yRatio = e.clientY / window.innerHeight - .5;
+      blobs.forEach((b, i) => {
+        gsap.to(b, { x: xRatio * (30 + i * 20), y: yRatio * (30 + i * 20), duration: 1.2, ease: 'power2.out' });
+      });
+    });
+  }
 }
 
 /* ============ SMOOTH ANCHOR SCROLL ============ */

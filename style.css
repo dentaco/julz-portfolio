@@ -180,7 +180,11 @@ h1,h2,h3{font-family:'Fraunces',serif;}
 .marquee-track{
   display:flex;width:max-content;gap:36px;white-space:nowrap;
   animation:marquee 26s linear infinite;
+  will-change:transform;transform-origin:center;
 }
+/* Once JS takes over, it drives the transform directly (scroll-velocity
+   reactive) and this flag disables the CSS fallback animation. */
+.marquee.js-driven .marquee-track{animation:none;}
 .marquee-track span{
   font-family:'Fraunces',serif;font-style:normal;font-weight:500;font-size:clamp(20px,2.6vw,32px);color:#fff;
 }
@@ -435,3 +439,28 @@ footer{background:var(--ink);color:#9fc4d8;padding:0 32px 50px;text-align:center
 
 /* ============ REVEAL BASE (GSAP controlled) ============ */
 .reveal-up{opacity:0;transform:translateY(40px);}
+
+/* ============ FOCUS VISIBILITY (quality floor) ============ */
+a:focus-visible,button:focus-visible{
+  outline:3px solid var(--pink-deep);outline-offset:3px;border-radius:4px;
+}
+
+/* ============ REDUCED MOTION ============ */
+@media (prefers-reduced-motion: reduce){
+  html{cursor:auto !important;}
+  body{cursor:auto !important;}
+  .cursor-dot,.cursor-ring{display:none !important;}
+  .reveal-up{opacity:1 !important;transform:none !important;}
+  .hero-title .word{transform:none !important;}
+  .hero-badge,.hero-sub,.hero-cta{opacity:1 !important;transform:none !important;}
+  .badge-pill,.sticker{opacity:1 !important;transform:none !important;}
+  .marquee-track{animation-duration:80s !important;}
+  .whatsapp-fab-ring{animation:none !important;}
+  .scroll-cue i::after{animation:none !important;}
+  *,*::before,*::after{
+    animation-duration:.01ms !important;animation-iteration-count:1 !important;
+    transition-duration:.01ms !important;scroll-behavior:auto !important;
+  }
+  /* re-allow the slow marquee drift after the blanket reset above */
+  .marquee-track{animation:marquee 80s linear infinite !important;}
+}
