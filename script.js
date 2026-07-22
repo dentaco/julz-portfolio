@@ -305,6 +305,28 @@ if (reduceMotion) {
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && activeCard) closeCard(activeCard); });
 })();
 
+/* ============ DECK REEL VIDEOS — lazy load + play only when visible ============ */
+/* Card fronts hold real Instagram reels (self-hosted, muted loops). The mp4
+   only loads once the deck scrolls near the viewport, and playback pauses
+   offscreen so the page stays light. Reduced-motion users keep the poster. */
+(() => {
+  const videos = document.querySelectorAll('.card-video');
+  if (!videos.length) return;
+
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(({ target: v, isIntersecting }) => {
+      if (isIntersecting) {
+        if (!v.src) { v.src = v.dataset.videoSrc; v.load(); }
+        if (!reduceMotion) v.play().catch(() => {});
+      } else if (!v.paused) {
+        v.pause();
+      }
+    });
+  }, { rootMargin: '200px 0px' });
+
+  videos.forEach((v) => io.observe(v));
+})();
+
 /* ============ HERO BLOBS — ambient breathing + pointer parallax ============ */
 if (!reduceMotion) {
   const blobs = document.querySelectorAll('.hero-blob');
