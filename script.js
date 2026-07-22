@@ -325,6 +325,17 @@ if (reduceMotion) {
   }, { rootMargin: '200px 0px' });
 
   videos.forEach((v) => io.observe(v));
+
+  /* play() while the tab is hidden gets rejected, so reels opened in a
+     background tab would sit frozen — kick the visible ones on return. */
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible' || reduceMotion) return;
+    videos.forEach((v) => {
+      if (!v.src || !v.paused) return;
+      const r = v.getBoundingClientRect();
+      if (r.bottom > -200 && r.top < window.innerHeight + 200) v.play().catch(() => {});
+    });
+  });
 })();
 
 /* ============ HERO BLOBS — ambient breathing + pointer parallax ============ */
