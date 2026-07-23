@@ -237,7 +237,18 @@ h1,h2,h3{font-family:'Fraunces',serif;}
   transform-style:preserve-3d;will-change:transform;
 }
 .brand-card:hover .brand-card-art{box-shadow:0 26px 54px rgba(14,42,58,.22);}
-.brand-card-art img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;background:var(--cloud);}
+.brand-card-art{position:relative;}
+.brand-card-art img{
+  width:100%;aspect-ratio:1/1;object-fit:cover;display:block;background:var(--cloud);
+  transition:transform .8s var(--ease);
+}
+.brand-card:hover .brand-card-art img{transform:scale(1.09) rotate(1.5deg);}
+.brand-card-art::after{
+  content:'';position:absolute;top:0;bottom:0;left:-70%;width:50%;z-index:2;pointer-events:none;
+  background:linear-gradient(105deg,transparent 0%,rgba(255,255,255,.42) 50%,transparent 100%);
+  transform:skewX(-18deg);transition:left .75s ease;
+}
+.brand-card:hover .brand-card-art::after{left:130%;}
 .brand-name{
   margin-top:14px;min-height:22px;text-align:center;
   font-family:'Fraunces',serif;font-style:italic;font-weight:500;

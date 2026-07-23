@@ -197,6 +197,25 @@ if (!reduceMotion) {
       yoyo: true
     });
   });
+
+  /* 3D tilt that follows the cursor — the card leans toward the pointer
+     while the image zooms (CSS) and a shine sweeps across (CSS ::after). */
+  if (hasFineCursor) {
+    document.querySelectorAll('.brand-card').forEach((card) => {
+      const art = card.querySelector('.brand-card-art');
+      const tiltX = gsap.quickTo(art, 'rotationX', { duration: .45, ease: 'power2.out' });
+      const tiltY = gsap.quickTo(art, 'rotationY', { duration: .45, ease: 'power2.out' });
+      gsap.set(art, { transformPerspective: 700 });
+      card.addEventListener('mousemove', (e) => {
+        const r = art.getBoundingClientRect();
+        const px = (e.clientX - r.left) / r.width - .5;
+        const py = (e.clientY - r.top) / r.height - .5;
+        tiltX(py * -14);
+        tiltY(px * 14);
+      });
+      card.addEventListener('mouseleave', () => { tiltX(0); tiltY(0); });
+    });
+  }
 }
 
 /* ============ HERO BLOBS — ambient breathing + pointer parallax ============ */
