@@ -181,6 +181,11 @@ if (reduceMotion) {
   });
 })();
 
+/* click flips a work card over to its short brand story (all devices) */
+document.querySelectorAll('.brand-card').forEach((card) => {
+  card.addEventListener('click', () => card.classList.toggle('is-flipped'));
+});
+
 /* ============ WORK CARDS — gentle idle float ============ */
 /* Static brand cards drift on a slow, out-of-phase bob so the grid feels
    alive without pulling focus. Hover lift comes from the shared data-hover
