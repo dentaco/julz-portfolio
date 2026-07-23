@@ -120,8 +120,8 @@ h1,h2,h3{font-family:'Fraunces',serif;}
   display:flex;align-items:flex-end;
   padding:120px 48px 100px;
   background:
-    linear-gradient(95deg,#58b8ea 0%,var(--sky-deep) 34%,rgba(127,205,243,.9) 52%,rgba(127,205,243,0) 78%),
-    url('images/popart-hero.jpg') right center/cover no-repeat;
+    linear-gradient(95deg,#58b8ea 0%,var(--sky-deep) 26%,rgba(127,205,243,.82) 40%,rgba(127,205,243,0) 60%),
+    url('images/popart-hero.jpg') center 22%/cover no-repeat;
 }
 .hero-blob{position:absolute;border-radius:50%;filter:blur(50px);opacity:.55;pointer-events:none;}
 .hero-blob-a,.hero-blob-c{display:none;}
