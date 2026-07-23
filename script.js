@@ -186,6 +186,54 @@ document.querySelectorAll('.brand-card').forEach((card) => {
   card.addEventListener('click', () => card.classList.toggle('is-flipped'));
 });
 
+/* ============ WATCH — per-card video lightbox ============ */
+/* Cards with data-videos get a Watch button on their flip side; clicking it
+   opens a full-screen strip of that brand's reels (9:16, one per source). */
+(() => {
+  const overlay = document.getElementById('videoOverlay');
+  const strip = document.getElementById('videoStrip');
+  if (!overlay || !strip) return;
+
+  document.querySelectorAll('.brand-card[data-videos]').forEach((card) => {
+    const btn = document.createElement('button');
+    btn.className = 'watch-btn';
+    btn.setAttribute('data-hover', '');
+    btn.textContent = 'Watch';
+    const back = card.querySelector('.flip-back');
+    back.insertBefore(btn, back.querySelector('.flip-hint'));
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation(); // keep the card from flipping back underneath
+      strip.innerHTML = '';
+      card.dataset.videos.split(',').forEach((src) => {
+        const v = document.createElement('video');
+        v.src = src.trim();
+        v.controls = true;
+        v.playsInline = true;
+        v.preload = 'metadata';
+        const poster = src.trim().replace(/\.mp4$/, '-poster.jpg');
+        v.poster = poster;
+        strip.appendChild(v);
+      });
+      overlay.classList.add('is-open');
+      overlay.setAttribute('aria-hidden', 'false');
+      const first = strip.querySelector('video');
+      if (first) { first.muted = false; first.play().catch(() => {}); }
+    });
+  });
+
+  function closeOverlay() {
+    overlay.classList.remove('is-open');
+    overlay.setAttribute('aria-hidden', 'true');
+    strip.querySelectorAll('video').forEach((v) => v.pause());
+  }
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay || e.target.classList.contains('video-close')) closeOverlay();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && overlay.classList.contains('is-open')) closeOverlay();
+  });
+})();
+
 /* ============ WORK CARDS — gentle idle float ============ */
 /* Static brand cards drift on a slow, out-of-phase bob so the grid feels
    alive without pulling focus. Hover lift comes from the shared data-hover
