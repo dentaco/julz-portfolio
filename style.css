@@ -223,7 +223,7 @@ h1,h2,h3{font-family:'Fraunces',serif;}
 /* ============ WORK — BRAND CARDS ============ */
 .work{
   padding:150px 0 120px;
-  background:linear-gradient(170deg,#e2ff68 0%,#ecff9b 40%,#f5ffcd 75%,#fbffe9 100%);
+  background:linear-gradient(175deg,#e6f6fd 0%,#e2ff68 16%,#ecff9b 46%,#f5ffcd 68%,#eef7f5 86%,#e7f1fd 100%);
 }
 .card-grid{
   max-width:1240px;margin:70px auto 0;padding:0 48px;
@@ -252,7 +252,7 @@ h1,h2,h3{font-family:'Fraunces',serif;}
 }
 
 /* ============ ARTIST ============ */
-.artist{padding:100px 0 150px;background:var(--paper);}
+.artist{padding:100px 0 150px;background:linear-gradient(175deg,#e7f1fd 0%,#c3d6f2 48%,#93b2e4 100%);}
 .artist-sub{margin-top:14px;font-size:15.5px;color:var(--soft);max-width:44ch;line-height:1.6;}
 .polaroid-row{
   max-width:1240px;margin:80px auto 0;padding:0 48px;
@@ -279,7 +279,7 @@ h1,h2,h3{font-family:'Fraunces',serif;}
 
 /* ============ ABOUT ============ */
 .about{
-  position:relative;background:linear-gradient(135deg,var(--sky),var(--sky-deep));
+  position:relative;background:linear-gradient(180deg,#93b2e4 0%,#9cc4ec 42%,var(--sky-deep) 100%);
   padding:150px 48px;overflow:hidden;
 }
 .about-blob{
@@ -318,7 +318,7 @@ h1,h2,h3{font-family:'Fraunces',serif;}
 }
 
 /* ============ BOOK A CALL ============ */
-.book{padding:130px 48px 150px;background:var(--paper);text-align:center;}
+.book{padding:130px 48px 150px;background:linear-gradient(180deg,var(--sky-deep) 0%,#d9f0fc 34%,var(--paper) 72%);text-align:center;}
 .book .section-head{text-align:center;}
 .book .eyebrow{justify-content:center;}
 .book .section-head h2{margin:0 auto;}
