@@ -220,93 +220,35 @@ h1,h2,h3{font-family:'Fraunces',serif;}
 }
 @media(max-width:820px){.section-count{display:none;}}
 
-/* ============ WORK — CARD DECK ============ */
+/* ============ WORK — BRAND CARDS ============ */
 .work{
   padding:150px 0 120px;
   background:linear-gradient(170deg,#e2ff68 0%,#ecff9b 40%,#f5ffcd 75%,#fbffe9 100%);
 }
-.deck-hint{
-  max-width:1240px;margin:14px auto 0;padding:0 48px;font-size:13.5px;color:var(--soft);
+.card-grid{
+  max-width:1240px;margin:70px auto 0;padding:0 48px;
+  display:grid;grid-template-columns:repeat(4,1fr);gap:34px 30px;
 }
-
-.deck{
-  position:relative;max-width:1240px;height:460px;margin:60px auto 0;
+.brand-card{cursor:pointer;}
+.brand-card-art{
+  border-radius:22px;overflow:hidden;
+  box-shadow:0 14px 34px rgba(14,42,58,.14);
+  transition:box-shadow .45s ease;
+  transform-style:preserve-3d;will-change:transform;
 }
-.deck-card{
-  position:absolute;top:0;left:0;cursor:pointer;opacity:0;
+.brand-card:hover .brand-card-art{box-shadow:0 26px 54px rgba(14,42,58,.22);}
+.brand-card-art img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;background:var(--cloud);}
+.brand-name{
+  margin-top:14px;min-height:22px;text-align:center;
+  font-family:'Fraunces',serif;font-style:italic;font-weight:500;
+  font-size:16.5px;color:var(--ink);letter-spacing:.2px;
 }
-.deck.is-ready .deck-card{opacity:1;transition:opacity .6s ease;}
-.deck.has-active .deck-card:not(.is-active){
-  opacity:.25 !important;filter:blur(2px);pointer-events:none;transition:opacity .4s ease,filter .4s ease;
+@media(max-width:1020px){
+  .card-grid{grid-template-columns:repeat(3,1fr);gap:28px 24px;}
 }
-.deck-card.is-active{position:fixed !important;z-index:1000;filter:none;}
-
-.card-inner{
-  position:relative;width:100%;height:100%;transform-style:preserve-3d;
-  transition:transform .7s var(--ease);
-}
-.deck-card.is-flipped .card-inner{transform:rotateY(180deg);}
-
-.card-front,.card-back{
-  position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
-  border-radius:20px;overflow:hidden;box-shadow:0 20px 45px rgba(14,42,58,.22);
-}
-.card-front{background:var(--cloud);border:1px solid #e3d9c4;}
-.card-front img,.card-front video{width:100%;height:100%;object-fit:cover;display:block;background:var(--cloud);}
-.card-front .card-index{
-  position:absolute;top:14px;left:16px;z-index:2;
-  font-family:'Fraunces',serif;font-style:italic;font-size:13px;color:#fff;
-  background:rgba(14,42,58,.45);padding:3px 11px;border-radius:100px;backdrop-filter:blur(4px);
-}
-.card-caption{
-  position:absolute;left:0;right:0;bottom:0;padding:18px 18px 16px;
-  background:linear-gradient(0deg,rgba(14,42,58,.9),rgba(14,42,58,0));color:#fff;
-}
-.card-caption h3{font-size:17px;font-weight:600;}
-.card-caption .tag{
-  display:inline-block;margin-top:7px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
-  color:var(--ink);background:var(--lemon);padding:3px 9px;border-radius:100px;
-}
-.card-close{
-  position:absolute;top:12px;right:12px;z-index:3;width:32px;height:32px;border-radius:50%;
-  background:rgba(14,42,58,.55);color:#fff;border:none;font-size:14px;cursor:pointer;
-  opacity:0;pointer-events:none;transition:opacity .3s ease,background .3s ease;
-  display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);
-}
-.deck-card.is-active .card-close{opacity:1;pointer-events:auto;}
-.card-close:hover{background:var(--pink-deep);}
-
-.card-back{
-  background:var(--ink);color:#fff;padding:28px;display:flex;flex-direction:column;
-  transform:rotateY(180deg);
-}
-.card-back .card-index{font-family:'Fraunces',serif;font-style:italic;font-size:13px;color:var(--lemon);}
-.card-back h3{margin-top:12px;font-size:23px;font-weight:600;}
-.card-back .tag{
-  display:inline-block;margin-top:9px;font-size:10.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
-  color:var(--ink);background:var(--lemon);padding:4px 10px;border-radius:100px;align-self:flex-start;
-}
-.card-back p{margin-top:15px;font-size:13.5px;line-height:1.65;color:#cfe3ee;}
-.card-back .card-role{color:#fff;font-size:13px;}
-.card-back .card-role strong{color:var(--lemon);}
-.card-flip-hint{margin-top:auto;padding-top:16px;font-size:11px;letter-spacing:.5px;color:#7fa0b3;text-align:center;}
-
-.deck-overlay{
-  position:fixed;inset:0;background:rgba(14,42,58,.6);backdrop-filter:blur(3px);
-  opacity:0;pointer-events:none;transition:opacity .4s ease;z-index:900;
-}
-.deck-overlay.is-visible{opacity:1;pointer-events:auto;}
-
 @media(max-width:820px){
-  .deck{
-    height:auto;display:flex;gap:18px;overflow-x:auto;padding:16px 24px 30px;margin-top:44px;
-    scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;
-  }
-  .deck::-webkit-scrollbar{display:none;}
-  .deck-card:not(.is-active){
-    position:static !important;width:210px !important;height:288px !important;
-    flex:0 0 auto;scroll-snap-align:center;
-  }
+  .card-grid{grid-template-columns:repeat(2,1fr);gap:24px 18px;padding:0 24px;margin-top:48px;}
+  .brand-name{font-size:14.5px;margin-top:10px;}
 }
 
 /* ============ ARTIST ============ */
