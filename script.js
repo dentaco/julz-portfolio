@@ -204,15 +204,25 @@ document.querySelectorAll('.brand-card').forEach((card) => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation(); // keep the card from flipping back underneath
       strip.innerHTML = '';
-      card.dataset.videos.split(',').forEach((src) => {
+      const views = (card.dataset.views || '').split(',');
+      card.dataset.videos.split(',').forEach((src, i) => {
+        const item = document.createElement('div');
+        item.className = 'video-item';
         const v = document.createElement('video');
         v.src = src.trim();
         v.controls = true;
         v.playsInline = true;
         v.preload = 'metadata';
-        const poster = src.trim().replace(/\.mp4$/, '-poster.jpg');
-        v.poster = poster;
-        strip.appendChild(v);
+        v.poster = src.trim().replace(/\.mp4$/, '-poster.jpg');
+        item.appendChild(v);
+        const count = (views[i] || '').trim();
+        if (count) {
+          const badge = document.createElement('span');
+          badge.className = 'video-views';
+          badge.textContent = count;
+          item.appendChild(badge);
+        }
+        strip.appendChild(item);
       });
       overlay.classList.add('is-open');
       overlay.setAttribute('aria-hidden', 'false');
