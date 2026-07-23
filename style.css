@@ -139,12 +139,13 @@ h1,h2,h3{font-family:'Fraunces',serif;}
   letter-spacing:2px;text-transform:uppercase;padding:8px 18px;border-radius:100px;margin-bottom:26px;
 }
 .hero-title{
-  font-family:'Fraunces',serif;font-weight:600;color:var(--ink);
+  font-family:'Fraunces',serif;font-weight:600;color:#fff;
   font-size:clamp(40px,8vw,104px);line-height:.98;letter-spacing:-1px;
+  text-shadow:0 2px 24px rgba(14,42,58,.18);
 }
 .hero-title .line{display:block;overflow:hidden;padding-bottom:.08em;}
 .hero-title .word{display:inline-block;transform:translateY(115%);will-change:transform;}
-.hero-title .hl{font-style:italic;color:#fff;-webkit-text-stroke:1.5px var(--ink);}
+.hero-title .hl{font-style:italic;color:var(--pink-deep);-webkit-text-stroke:0;}
 .hero-title .dot-accent{color:var(--pink-deep);-webkit-text-stroke:0;}
 .hero-sub{
   margin-top:28px;font-size:clamp(16px,2vw,20px);max-width:46ch;color:var(--ink);opacity:.85;line-height:1.6;
