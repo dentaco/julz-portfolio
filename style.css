@@ -317,7 +317,7 @@ h1,h2,h3{font-family:'Fraunces',serif;}
 }
 .polaroid img{border-radius:2px;aspect-ratio:4/5;object-fit:cover;width:100%;}
 .polaroid figcaption{
-  font-family:'Caveat',cursive;font-size:22px;text-align:center;margin-top:14px;color:var(--ink);font-weight:700;
+  font-family:'Kaushan Script',cursive;font-size:19px;text-align:center;margin-top:14px;color:var(--ink);
 }
 .p-1{transform:rotate(-6deg);}
 .p-2{transform:rotate(3deg) translateY(20px);}
