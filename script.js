@@ -37,7 +37,7 @@ function playHero() {
   if (reduceMotion) {
     gsap.set('.hero-title .word', { y: '0%' });
     gsap.set('.hero-badge, .hero-sub, .hero-cta', { opacity: 1, y: 0 });
-    gsap.set('.badge-pill, .sticker', { opacity: 1, scale: 1 });
+    gsap.set('.badge-pill', { opacity: 1, scale: 1 });
     return;
   }
   gsap.to('.hero-title .word', {
@@ -46,12 +46,12 @@ function playHero() {
   gsap.to('.hero-badge, .hero-sub, .hero-cta', {
     opacity: 1, y: 0, duration: .9, ease: 'power3.out', stagger: .12, delay: .5
   });
-  gsap.to('.badge-pill, .sticker', {
+  gsap.to('.badge-pill', {
     opacity: 1, scale: 1, duration: .8, ease: 'back.out(1.7)', stagger: .08, delay: .7
   });
 }
 gsap.set('.hero-badge, .hero-sub, .hero-cta', { opacity: 0, y: 20 });
-gsap.set('.badge-pill, .sticker', { opacity: 0, scale: .5 });
+gsap.set('.badge-pill', { opacity: 0, scale: .5 });
 
 /* Parallax the hero copy gently as it scrolls away — adds depth over the
    drifting blobs without pulling focus. */
