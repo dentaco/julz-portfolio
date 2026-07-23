@@ -89,8 +89,8 @@ if (hasFineCursor && cursorDot && cursorRing) {
   });
 
   document.querySelectorAll('[data-hover]').forEach((el) => {
-    el.addEventListener('mouseenter', () => cursorRing.classList.add('is-hover'));
-    el.addEventListener('mouseleave', () => cursorRing.classList.remove('is-hover'));
+    el.addEventListener('mouseenter', () => { cursorRing.classList.add('is-hover'); cursorDot.classList.add('is-hover'); });
+    el.addEventListener('mouseleave', () => { cursorRing.classList.remove('is-hover'); cursorDot.classList.remove('is-hover'); });
   });
 }
 
