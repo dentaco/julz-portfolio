@@ -147,7 +147,6 @@ h1,h2,h3{font-family:'Fraunces',serif;}
 .hero-title .line{display:block;overflow:hidden;padding-bottom:.08em;}
 .hero-title .word{display:inline-block;transform:translateY(115%);will-change:transform;}
 .hero-title .hl{font-style:italic;color:var(--pink-deep);-webkit-text-stroke:0;}
-.hero-title .dot-accent{color:var(--pink-deep);-webkit-text-stroke:0;}
 .hero-sub{
   margin-top:28px;font-size:clamp(16px,2vw,20px);max-width:46ch;color:var(--ink);opacity:.85;line-height:1.6;
 }
