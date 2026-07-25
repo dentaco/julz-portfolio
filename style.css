@@ -68,14 +68,37 @@ h1,h2,h3{font-family:'Fraunces',serif;}
 
 /* ============ PRELOADER ============ */
 .preloader{
-  position:fixed;inset:0;z-index:10000;background:var(--ink);
+  position:fixed;inset:0;z-index:10000;
+  background:radial-gradient(140% 120% at 50% 40%,#0a141b 0%,#080d12 55%,#04070a 100%);
   display:flex;align-items:center;justify-content:center;
+  --neon:#5df2ff;--neon-lite:#b6faff;--glow:rgba(93,242,255,.55);
 }
-.preloader-inner{text-align:center;}
-.preloader-word{font-family:'Fraunces',serif;font-size:clamp(40px,8vw,80px);color:#fff;font-weight:600;letter-spacing:.5px;}
-.preloader-word .dot{color:var(--lemon);}
-.preloader-bar{width:200px;height:3px;background:rgba(255,255,255,.15);border-radius:10px;margin:22px auto 0;overflow:hidden;}
-.preloader-bar span{display:block;height:100%;width:0%;background:var(--lemon);border-radius:10px;}
+.preloader-inner{position:relative;text-align:center;}
+/* имя — крупно, тем же шрифтом что и hero (Fraunces 600, -1px) */
+.preloader-word{
+  position:relative;font-family:'Fraunces',serif;font-weight:600;letter-spacing:-1px;
+  font-size:clamp(60px,13vw,150px);line-height:.98;color:rgba(255,255,255,.05);
+}
+.preloader-word .dot{color:rgba(255,255,255,.07);}
+/* неоновая заливка, проявляющаяся сверху вниз */
+.preloader-fill{
+  position:absolute;inset:0;color:transparent;
+  background:linear-gradient(180deg,var(--neon) 0%,var(--neon-lite) 60%,#ffffff 100%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  clip-path:inset(0 0 var(--reveal,100%) 0);
+  filter:drop-shadow(0 0 16px var(--glow)) drop-shadow(0 0 40px var(--glow));
+}
+.preloader-fill .dot{color:var(--neon);}
+/* тонкий луч света, идущий сверху вниз */
+.preloader-scan{
+  position:absolute;left:50%;top:26%;width:min(60vw,420px);height:2px;transform:translateX(-50%);
+  background:linear-gradient(90deg,transparent,var(--neon-lite),transparent);
+  box-shadow:0 0 18px var(--glow);opacity:0;pointer-events:none;
+}
+@media (prefers-reduced-motion: reduce){
+  .preloader-fill{clip-path:inset(0 0 0 0);}
+  .preloader-scan{display:none;}
+}
 
 /* ============ HEADER ============ */
 .site-header{

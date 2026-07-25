@@ -21,7 +21,11 @@ window.addEventListener('load', () => {
       playHero();
     }
   });
-  tl.to('.preloader-bar span', { width: '100%', duration: 1, ease: 'power2.inOut' })
+  gsap.set('.preloader-fill', { '--reveal': '100%' });
+  // луч света проходит сверху вниз, а имя проявляется неоновой заливкой
+  tl.to('.preloader-scan', { top: '72%', opacity: 1, duration: 1.1, ease: 'power2.inOut' })
+    .to('.preloader-fill', { '--reveal': '0%', duration: 1.1, ease: 'power2.inOut' }, '<')
+    .to('.preloader-scan', { opacity: 0, duration: .25, ease: 'power2.in' }, '-=.15')
     .to('.preloader-word', { y: -20, opacity: 0, duration: .4, ease: 'power2.in' }, '-=.1')
     .to('.preloader', { yPercent: -100, duration: .7, ease: 'power3.inOut' }, '-=.2');
 });
