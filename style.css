@@ -54,17 +54,29 @@ h1,h2,h3{font-family:'Fraunces',serif;}
 .star-wrap{display:block;width:100%;height:100%;transition:transform .35s var(--ease);}
 .cursor-dot svg,.cursor-ring svg{
   width:100%;height:100%;display:block;overflow:visible;
-  animation:starSpin 7s linear infinite;
-  filter:drop-shadow(0 0 5px rgba(255,255,255,.6));
+  animation:starSpin 7s linear infinite, neonGlow 4s linear infinite;
 }
-.cursor-ring svg{animation-duration:9s;animation-direction:reverse;}
-.cursor-dot svg path{fill:var(--ink);transition:fill .3s ease;}
-.cursor-ring svg path{fill:var(--pink-deep);transition:fill .3s ease;}
+.cursor-ring svg{animation:starSpin 9s linear infinite reverse, neonGlow 4s linear infinite;animation-delay:0s,-2s;}
+.cursor-dot svg path,.cursor-ring svg path{animation:neonShimmer 4s linear infinite;}
+.cursor-ring svg path{animation-delay:-2s;}
 .cursor-dot.is-hover .star-wrap{transform:scale(1.75);}
-.cursor-dot.is-hover svg path{fill:var(--pink-deep);}
 .cursor-ring.is-hover .star-wrap{transform:scale(.35);}
-.cursor-ring.is-hover svg path{fill:var(--lemon);}
 @keyframes starSpin{to{transform:rotate(360deg);}}
+/* переливающийся яркий неон на курсоре-звёздочке */
+@keyframes neonShimmer{
+  0%{fill:#5df2ff}25%{fill:#ff5db1}50%{fill:#c46bff}75%{fill:#f5e14b}100%{fill:#5df2ff}
+}
+@keyframes neonGlow{
+  0%  {filter:drop-shadow(0 0 4px #5df2ff) drop-shadow(0 0 10px rgba(93,242,255,.85))}
+  25% {filter:drop-shadow(0 0 4px #ff5db1) drop-shadow(0 0 10px rgba(255,93,177,.85))}
+  50% {filter:drop-shadow(0 0 4px #c46bff) drop-shadow(0 0 10px rgba(196,107,255,.85))}
+  75% {filter:drop-shadow(0 0 4px #f5e14b) drop-shadow(0 0 10px rgba(245,225,75,.85))}
+  100%{filter:drop-shadow(0 0 4px #5df2ff) drop-shadow(0 0 10px rgba(93,242,255,.85))}
+}
+@media (prefers-reduced-motion: reduce){
+  .cursor-dot svg,.cursor-ring svg{animation:none;filter:drop-shadow(0 0 6px rgba(93,242,255,.85));}
+  .cursor-dot svg path,.cursor-ring svg path{animation:none;fill:#5df2ff;}
+}
 
 /* ============ PRELOADER ============ */
 .preloader{
