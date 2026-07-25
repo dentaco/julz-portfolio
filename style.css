@@ -99,7 +99,9 @@ h1,h2,h3{font-family:'Fraunces',serif;}
   position:absolute;inset:0;color:transparent;
   background:linear-gradient(180deg,var(--neon) 0%,var(--neon-lite) 60%,#ffffff 100%);
   -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
-  clip-path:inset(0 0 var(--reveal,100%) 0);
+  /* soft bottom-to-top rise with a feathered edge — light "floats" up like a sunrise */
+  -webkit-mask-image:linear-gradient(to top, #000 var(--rise,0%), transparent calc(var(--rise,0%) + 34%));
+  mask-image:linear-gradient(to top, #000 var(--rise,0%), transparent calc(var(--rise,0%) + 34%));
 }
 .preloader-fill .dot{color:var(--neon);}
 /* мягкое рассеянное свечение — «встающее солнце» за надписью, без резких краёв */
@@ -116,7 +118,7 @@ h1,h2,h3{font-family:'Fraunces',serif;}
   filter:blur(24px);mix-blend-mode:screen;
 }
 @media (prefers-reduced-motion: reduce){
-  .preloader-fill{clip-path:inset(0 0 0 0);}
+  .preloader-fill{-webkit-mask-image:none;mask-image:none;}
   .preloader-scan{display:none;}
 }
 
