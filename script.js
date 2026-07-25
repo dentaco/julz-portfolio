@@ -185,67 +185,63 @@ if (reduceMotion) {
   });
 })();
 
-/* click flips a work card over to its short brand story (all devices) */
-document.querySelectorAll('.brand-card').forEach((card) => {
-  card.addEventListener('click', () => card.classList.toggle('is-flipped'));
-});
-
-/* ============ WATCH — per-card video lightbox ============ */
-/* Cards with data-videos get a Watch button on their flip side; clicking it
-   opens a full-screen strip of that brand's reels (9:16, one per source). */
+/* ============ WORK ZONES — animated reels + request modal ============ */
 (() => {
-  const overlay = document.getElementById('videoOverlay');
-  const strip = document.getElementById('videoStrip');
-  if (!overlay || !strip) return;
+  const zones = document.querySelectorAll('.zone');
+  if (!zones.length) return;
 
-  document.querySelectorAll('.brand-card[data-videos]').forEach((card) => {
-    const btn = document.createElement('button');
-    btn.className = 'watch-btn';
-    btn.setAttribute('data-hover', '');
-    btn.textContent = 'Watch';
-    const back = card.querySelector('.flip-back');
-    back.insertBefore(btn, back.querySelector('.flip-hint'));
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation(); // keep the card from flipping back underneath
-      strip.innerHTML = '';
-      const views = (card.dataset.views || '').split(',');
-      card.dataset.videos.split(',').forEach((src, i) => {
-        const item = document.createElement('div');
-        item.className = 'video-item';
-        const v = document.createElement('video');
-        v.src = src.trim();
-        v.controls = true;
-        v.playsInline = true;
-        v.preload = 'metadata';
-        v.poster = src.trim().replace(/\.mp4$/, '-poster.jpg');
-        item.appendChild(v);
-        const count = (views[i] || '').trim();
-        if (count) {
-          const badge = document.createElement('span');
-          badge.className = 'video-views';
-          badge.textContent = count;
-          item.appendChild(badge);
-        }
-        strip.appendChild(item);
-      });
-      overlay.classList.add('is-open');
-      overlay.setAttribute('aria-hidden', 'false');
-      const first = strip.querySelector('video');
-      if (first) { first.muted = false; first.play().catch(() => {}); }
+  // lazy-attach the source, then keep the reel looping so the objects move
+  const play = (v) => {
+    if (!v) return;
+    if (!v.src) v.src = v.dataset.src;
+    v.play().catch(() => {});
+  };
+
+  // front reel plays while the zone is on screen; back reel wakes on hover
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => {
+      const front = e.target.querySelector('.r-1 video');
+      if (e.isIntersecting) play(front);
+      else if (front) front.pause();
+    });
+  }, { threshold: 0.25 });
+
+  // request modal
+  const modal = document.getElementById('requestModal');
+  const title = modal && modal.querySelector('#requestTitle');
+  const mailBtn = modal && modal.querySelector('.request-btn');
+  const openModal = (cat) => {
+    if (!modal) return;
+    if (title) title.textContent = cat;
+    if (mailBtn) mailBtn.href = 'mailto:julzzz2907@gmail.com?subject=' +
+      encodeURIComponent('Materials request \u2014 ' + cat);
+    modal.classList.add('is-open');
+    modal.setAttribute('aria-hidden', 'false');
+  };
+  const closeModal = () => {
+    if (!modal) return;
+    modal.classList.remove('is-open');
+    modal.setAttribute('aria-hidden', 'true');
+  };
+
+  zones.forEach((z) => {
+    io.observe(z);
+    const back = z.querySelector('.r-2 video');
+    z.addEventListener('mouseenter', () => play(back));
+    z.addEventListener('click', () => openModal(z.dataset.category));
+    z.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(z.dataset.category); }
     });
   });
 
-  function closeOverlay() {
-    overlay.classList.remove('is-open');
-    overlay.setAttribute('aria-hidden', 'true');
-    strip.querySelectorAll('video').forEach((v) => v.pause());
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal || e.target.classList.contains('request-close')) closeModal();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modal.classList.contains('is-open')) closeModal();
+    });
   }
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay || e.target.classList.contains('video-close')) closeOverlay();
-  });
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && overlay.classList.contains('is-open')) closeOverlay();
-  });
 })();
 
 /* ============ WORK CARDS — gentle idle float ============ */
@@ -253,10 +249,9 @@ document.querySelectorAll('.brand-card').forEach((card) => {
    alive without pulling focus. Hover lift comes from the shared data-hover
    magnetic effect + a deeper shadow in CSS. */
 if (!reduceMotion) {
-  gsap.utils.toArray('.brand-card-art').forEach((art, i) => {
+  gsap.utils.toArray('.zone-reels').forEach((art, i) => {
     gsap.to(art, {
-      y: -6,
-      rotation: i % 2 ? 1.1 : -1.1,
+      y: -7,
       duration: 3 + (i % 4) * 0.55,
       delay: i * 0.35,
       ease: 'sine.inOut',
@@ -268,8 +263,8 @@ if (!reduceMotion) {
   /* 3D tilt that follows the cursor — the card leans toward the pointer
      while the image zooms (CSS) and a shine sweeps across (CSS ::after). */
   if (hasFineCursor) {
-    document.querySelectorAll('.brand-card').forEach((card) => {
-      const art = card.querySelector('.brand-card-art');
+    document.querySelectorAll('.zone').forEach((card) => {
+      const art = card.querySelector('.zone-reels');
       const tiltX = gsap.quickTo(art, 'rotationX', { duration: .45, ease: 'power2.out' });
       const tiltY = gsap.quickTo(art, 'rotationY', { duration: .45, ease: 'power2.out' });
       gsap.set(art, { transformPerspective: 700 });
