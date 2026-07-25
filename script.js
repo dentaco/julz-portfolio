@@ -188,36 +188,34 @@ if (reduceMotion) {
   });
 })();
 
-/* ============ WORK ZONES — animated reels + request modal ============ */
+/* ============ WORK — flowing reel row + request modal ============ */
 (() => {
-  const zones = document.querySelectorAll('.zone');
-  if (!zones.length) return;
+  const reels = document.querySelectorAll('.reel');
+  if (!reels.length) return;
 
-  // lazy-attach the source, then keep the reel looping so the objects move
+  // lazy-attach the source, then keep the reel looping so the shots stay moving
   const play = (v) => {
     if (!v) return;
     if (!v.src) v.src = v.dataset.src;
     v.play().catch(() => {});
   };
 
-  // front reel plays while the zone is on screen; back reel wakes on hover
+  // only play reels currently on screen (they scroll through the row)
   const io = new IntersectionObserver((entries) => {
     entries.forEach((e) => {
-      const front = e.target.querySelector('.r-1 video');
-      if (e.isIntersecting) play(front);
-      else if (front) front.pause();
+      const v = e.target.querySelector('video');
+      if (e.isIntersecting) play(v);
+      else if (v) v.pause();
     });
-  }, { threshold: 0.25 });
+  }, { rootMargin: '100px', threshold: 0.1 });
 
-  // request modal
+  // request modal (same message for every reel)
   const modal = document.getElementById('requestModal');
-  const title = modal && modal.querySelector('#requestTitle');
   const mailBtn = modal && modal.querySelector('.request-btn');
-  const openModal = (cat) => {
+  const openModal = () => {
     if (!modal) return;
-    if (title) title.textContent = cat;
     if (mailBtn) mailBtn.href = 'mailto:julzzz2907@gmail.com?subject=' +
-      encodeURIComponent('Materials request \u2014 ' + cat);
+      encodeURIComponent('Materials request \u2014 portfolio reel');
     modal.classList.add('is-open');
     modal.setAttribute('aria-hidden', 'false');
   };
@@ -227,14 +225,9 @@ if (reduceMotion) {
     modal.setAttribute('aria-hidden', 'true');
   };
 
-  zones.forEach((z) => {
-    io.observe(z);
-    const back = z.querySelector('.r-2 video');
-    z.addEventListener('mouseenter', () => play(back));
-    z.addEventListener('click', () => openModal(z.dataset.category));
-    z.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(z.dataset.category); }
-    });
+  reels.forEach((r) => {
+    io.observe(r);
+    r.addEventListener('click', openModal);
   });
 
   if (modal) {
