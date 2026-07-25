@@ -90,6 +90,8 @@ h1,h2,h3{font-family:'Fraunces',serif;}
 .preloader-word{
   position:relative;font-family:'Fraunces',serif;font-weight:600;letter-spacing:-1px;
   font-size:clamp(60px,13vw,150px);line-height:.98;color:rgba(255,255,255,.05);
+  /* glow lives on the parent — putting it on the clipped-text fill leaks a box */
+  filter:drop-shadow(0 0 22px var(--glow)) drop-shadow(0 0 60px rgba(93,242,255,.4));
 }
 .preloader-word .dot{color:rgba(255,255,255,.07);}
 /* неоновая заливка, проявляющаяся сверху вниз */
@@ -98,7 +100,6 @@ h1,h2,h3{font-family:'Fraunces',serif;}
   background:linear-gradient(180deg,var(--neon) 0%,var(--neon-lite) 60%,#ffffff 100%);
   -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
   clip-path:inset(0 0 var(--reveal,100%) 0);
-  filter:drop-shadow(0 0 24px var(--glow)) drop-shadow(0 0 70px rgba(93,242,255,.4));
 }
 .preloader-fill .dot{color:var(--neon);}
 /* мягкое рассеянное свечение — «встающее солнце» за надписью, без резких краёв */
