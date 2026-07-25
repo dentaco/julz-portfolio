@@ -1,4 +1,4 @@
-gsap.registerPlugin(ScrollTrigger);
+gsap.registerPlugin(ScrollTrigger, Flip);
 
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -188,56 +188,155 @@ if (reduceMotion) {
   });
 })();
 
-/* ============ WORK — flowing reel row + request modal ============ */
+/* ============ WORK DECK — fanned reels, click to pull out ============ */
 (() => {
-  const reels = document.querySelectorAll('.reel');
-  if (!reels.length) return;
+  const deck = document.getElementById('deck');
+  const deckOverlay = document.getElementById('deckOverlay');
+  if (!deck || !deckOverlay) return;
 
-  // lazy-attach the source, then keep the reel looping so the shots stay moving
-  const play = (v) => {
-    if (!v) return;
-    if (!v.src) v.src = v.dataset.src;
-    v.play().catch(() => {});
-  };
+  const cards = Array.from(deck.querySelectorAll('.deck-card'));
+  const mid = (cards.length - 1) / 2;
+  const rotStep = 12 / Math.max(mid, 1);   // keep the fan tilt envelope ~+/-12deg
+  const yStep = 30 / Math.max(mid, 1);     // and the arc ~30px, whatever the count
+  const REST = cards.map((_, i) => ({ rot: (i - mid) * rotStep, y: Math.abs(i - mid) * yStep }));
+  let activeCard = null;
 
-  // only play reels currently on screen (they scroll through the row)
-  const io = new IntersectionObserver((entries) => {
-    entries.forEach((e) => {
-      const v = e.target.querySelector('video');
-      if (e.isIntersecting) play(v);
-      else if (v) v.pause();
+  function layoutDeck() {
+    if (!hasFineCursor) { deck.classList.add('is-ready'); return; }
+    const deckRect = deck.getBoundingClientRect();
+    const cardW = 230, cardH = 322;
+    const overlap = Math.min(150, (deckRect.width - cardW) / (cards.length - 1));
+    const totalWidth = cardW + overlap * (cards.length - 1);
+    const startX = Math.max(0, (deckRect.width - totalWidth) / 2);
+    cards.forEach((card, i) => {
+      const left = Math.round(startX + i * overlap) + 'px';
+      const top = '70px';
+      card.dataset.restLeft = left;
+      card.dataset.restTop = top;
+      card.dataset.restWidth = cardW + 'px';
+      card.dataset.restHeight = cardH + 'px';
+      if (!card.classList.contains('is-active')) {
+        card.style.width = cardW + 'px';
+        card.style.height = cardH + 'px';
+        card.style.left = left;
+        card.style.top = top;
+        gsap.set(card, { x: 0, y: REST[i].y, rotation: REST[i].rot, scale: 1, zIndex: i + 1 });
+      }
     });
-  }, { rootMargin: '100px', threshold: 0.1 });
+    deck.classList.add('is-ready');
+  }
+  layoutDeck();
+  window.addEventListener('resize', () => { if (!activeCard) layoutDeck(); });
 
-  // request modal (same message for every reel)
-  const modal = document.getElementById('requestModal');
-  const mailBtn = modal && modal.querySelector('.request-btn');
-  const openModal = () => {
-    if (!modal) return;
-    if (mailBtn) mailBtn.href = 'mailto:julzzz2907@gmail.com?subject=' +
-      encodeURIComponent('Materials request \u2014 portfolio reel');
-    modal.classList.add('is-open');
-    modal.setAttribute('aria-hidden', 'false');
-  };
-  const closeModal = () => {
-    if (!modal) return;
-    modal.classList.remove('is-open');
-    modal.setAttribute('aria-hidden', 'true');
-  };
-
-  reels.forEach((r) => {
-    io.observe(r);
-    r.addEventListener('click', openModal);
-  });
-
-  if (modal) {
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal || e.target.classList.contains('request-close')) closeModal();
+  if (hasFineCursor) {
+    deck.addEventListener('mousemove', (e) => {
+      if (activeCard) return;
+      const mouseX = e.clientX;
+      let closestIndex = 0, closestDist = Infinity;
+      cards.forEach((card, i) => {
+        const r = card.getBoundingClientRect();
+        const d = Math.abs(mouseX - (r.left + r.width / 2));
+        if (d < closestDist) { closestDist = d; closestIndex = i; }
+      });
+      cards.forEach((card, i) => {
+        const delta = i - closestIndex;
+        if (delta === 0) {
+          gsap.to(card, { rotation: 0, y: -40, scale: 1.12, x: 0, zIndex: 100, duration: .4, ease: 'power3.out' });
+        } else {
+          const dist = Math.min(Math.abs(delta), 3);
+          gsap.to(card, {
+            rotation: REST[i].rot, y: REST[i].y + dist * 6,
+            x: Math.sign(delta) * dist * 18, scale: 1 - dist * 0.02,
+            zIndex: 50 - dist, duration: .4, ease: 'power3.out'
+          });
+        }
+      });
     });
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && modal.classList.contains('is-open')) closeModal();
+    deck.addEventListener('mouseleave', () => {
+      if (activeCard) return;
+      cards.forEach((card, i) => {
+        gsap.to(card, { rotation: REST[i].rot, y: REST[i].y, x: 0, scale: 1, zIndex: i + 1, duration: .5, ease: 'power3.out' });
+      });
     });
   }
+
+  function openCard(card) {
+    if (activeCard === card) return;
+    if (activeCard) closeCard(activeCard);
+    activeCard = card;
+    const state = Flip.getState(card);
+    card.classList.add('is-active');
+    deck.classList.add('has-active');
+    deckOverlay.classList.add('is-visible');
+    const isMobile = window.innerWidth < 640;
+    const w = isMobile ? Math.min(window.innerWidth - 48, 340) : 400;
+    const h = Math.round(w * 1.4);
+    card.style.width = w + 'px';
+    card.style.height = h + 'px';
+    card.style.left = Math.round((window.innerWidth - w) / 2) + 'px';
+    card.style.top = Math.round((window.innerHeight - h) / 2) + 'px';
+    gsap.set(card, { rotation: 0, scale: 1, x: 0, y: 0, zIndex: 1000 });
+    Flip.from(state, { duration: .65, ease: 'power3.inOut', scale: true, absolute: true });
+  }
+
+  function closeCard(card) {
+    const state = Flip.getState(card);
+    const idx = cards.indexOf(card);
+    card.classList.remove('is-active');
+    card.classList.remove('is-flipped');
+    deck.classList.remove('has-active');
+    deckOverlay.classList.remove('is-visible');
+    if (hasFineCursor) {
+      card.style.width = card.dataset.restWidth;
+      card.style.height = card.dataset.restHeight;
+      card.style.left = card.dataset.restLeft;
+      card.style.top = card.dataset.restTop;
+      gsap.set(card, { rotation: REST[idx].rot, y: REST[idx].y, x: 0, scale: 1, zIndex: idx + 1 });
+    } else {
+      card.style.width = ''; card.style.height = ''; card.style.left = ''; card.style.top = '';
+      gsap.set(card, { clearProps: 'all' });
+    }
+    Flip.from(state, { duration: .55, ease: 'power3.inOut', scale: true, absolute: true });
+    if (activeCard === card) activeCard = null;
+  }
+
+  deck.addEventListener('click', (e) => {
+    if (e.target.closest('.card-req-btn')) return; // let the mailto link work
+    const closeBtn = e.target.closest('.card-close');
+    const cardEl = e.target.closest('.deck-card');
+    if (!cardEl) return;
+    if (closeBtn) { e.stopPropagation(); closeCard(cardEl); return; }
+    if (cardEl.classList.contains('is-active')) {
+      cardEl.classList.toggle('is-flipped');
+    } else {
+      openCard(cardEl);
+    }
+  });
+  deckOverlay.addEventListener('click', () => { if (activeCard) closeCard(activeCard); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && activeCard) closeCard(activeCard); });
+})();
+
+/* ============ DECK REEL VIDEOS — lazy load + play only when visible ============ */
+(() => {
+  const videos = document.querySelectorAll('.card-video');
+  if (!videos.length) return;
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(({ target: v, isIntersecting }) => {
+      if (isIntersecting) {
+        if (!v.src) { v.src = v.dataset.videoSrc; v.load(); }
+        if (!reduceMotion) v.play().catch(() => {});
+      } else if (!v.paused) { v.pause(); }
+    });
+  }, { rootMargin: '200px 0px' });
+  videos.forEach((v) => io.observe(v));
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible' || reduceMotion) return;
+    videos.forEach((v) => {
+      if (!v.src || !v.paused) return;
+      const r = v.getBoundingClientRect();
+      if (r.bottom > -200 && r.top < window.innerHeight + 200) v.play().catch(() => {});
+    });
+  });
 })();
 
 /* ============ WORK CARDS — gentle idle float ============ */
