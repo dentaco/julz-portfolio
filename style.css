@@ -98,14 +98,21 @@ h1,h2,h3{font-family:'Fraunces',serif;}
   background:linear-gradient(180deg,var(--neon) 0%,var(--neon-lite) 60%,#ffffff 100%);
   -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
   clip-path:inset(0 0 var(--reveal,100%) 0);
-  filter:drop-shadow(0 0 16px var(--glow)) drop-shadow(0 0 40px var(--glow));
+  filter:drop-shadow(0 0 24px var(--glow)) drop-shadow(0 0 70px rgba(93,242,255,.4));
 }
 .preloader-fill .dot{color:var(--neon);}
-/* тонкий луч света, идущий сверху вниз */
+/* мягкое рассеянное свечение — «встающее солнце» за надписью, без резких краёв */
 .preloader-scan{
-  position:absolute;left:50%;top:26%;width:min(60vw,420px);height:2px;transform:translateX(-50%);
-  background:linear-gradient(90deg,transparent,var(--neon-lite),transparent);
-  box-shadow:0 0 18px var(--glow);opacity:0;pointer-events:none;
+  position:absolute;left:50%;top:62%;
+  width:min(150vw,1100px);height:min(150vw,1100px);
+  transform:translate(-50%,-50%) scale(.6);
+  border-radius:50%;pointer-events:none;opacity:0;
+  background:radial-gradient(circle,
+    rgba(182,250,255,.55) 0%,
+    var(--glow) 22%,
+    rgba(93,242,255,.18) 45%,
+    transparent 68%);
+  filter:blur(24px);mix-blend-mode:screen;
 }
 @media (prefers-reduced-motion: reduce){
   .preloader-fill{clip-path:inset(0 0 0 0);}

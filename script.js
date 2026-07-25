@@ -22,11 +22,12 @@ window.addEventListener('load', () => {
     }
   });
   gsap.set('.preloader-fill', { '--reveal': '100%' });
-  // луч света проходит сверху вниз, а имя проявляется неоновой заливкой
-  tl.to('.preloader-scan', { top: '72%', opacity: 1, duration: 1.1, ease: 'power2.inOut' })
+  gsap.set('.preloader-scan', { xPercent: -50, yPercent: -50, top: '80%', scale: .55, opacity: 0 });
+  // мягкое свечение «восходит» снизу и разливается, пока имя наливается светом
+  tl.to('.preloader-scan', { top: '50%', scale: 1.15, opacity: 1, duration: 1.25, ease: 'power2.out' })
     .to('.preloader-fill', { '--reveal': '0%', duration: 1.1, ease: 'power2.inOut' }, '<')
-    .to('.preloader-scan', { opacity: 0, duration: .25, ease: 'power2.in' }, '-=.15')
-    .to('.preloader-word', { y: -20, opacity: 0, duration: .4, ease: 'power2.in' }, '-=.1')
+    .to('.preloader-scan', { opacity: 0, duration: .55, ease: 'power2.in' }, '-=.3')
+    .to('.preloader-word', { y: -20, opacity: 0, duration: .4, ease: 'power2.in' }, '-=.2')
     .to('.preloader', { yPercent: -100, duration: .7, ease: 'power3.inOut' }, '-=.2');
 });
 // Fallback in case load event is slow/blocked
