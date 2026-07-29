@@ -189,12 +189,10 @@ if (reduceMotion) {
 })();
 
 /* ============ DECK REEL PLAYBACK ============ */
-/* Reels animate on their own — the deck is meant to look alive. Two things
-   narrow that down: while the pile is folded only the top few cards are worth
-   decoding, and pulling a card out solos it so the rest hold still. */
+/* Every reel on screen animates — the row is meant to look alive. The one
+   exception is pulling a card out: that solos it and the rest hold still. */
 const deckReels = (() => {
   const inView = new Set();
-  let allowed = null;          // null = anything in view may run
   let solo = null, frozen = false;
 
   const all = () => document.querySelectorAll('.card-video');
@@ -203,8 +201,7 @@ const deckReels = (() => {
   function sync() {
     const awake = document.visibilityState === 'visible' && !frozen;
     all().forEach((v) => {
-      const ambient = !reduceMotion && (!allowed || allowed.has(v));
-      const wanted = awake && inView.has(v) && (solo ? v === solo : ambient);
+      const wanted = awake && inView.has(v) && (solo ? v === solo : !reduceMotion);
       if (wanted) { load(v); if (v.paused) v.play().catch(() => {}); }
       else if (!v.paused) v.pause();
     });
@@ -213,8 +210,6 @@ const deckReels = (() => {
   return {
     load, sync,
     track(v, visible) { visible ? inView.add(v) : inView.delete(v); sync(); },
-    /* Limit ambient playback to a subset (the visible top of the folded pile). */
-    restrict(list) { allowed = list ? new Set(list) : null; sync(); },
     /* Pull one reel forward: it restarts, everything else stands down. */
     solo(v) {
       solo = v; frozen = false;
@@ -235,42 +230,11 @@ const deckReels = (() => {
 
   const cards = Array.from(deck.querySelectorAll('.deck-card'));
   if (!cards.length) return;
-  const last = Math.max(cards.length - 1, 1);
-  /* only the cards you can actually see on the folded pile decode video */
-  const topVideos = cards.slice(-4).map((c) => c.querySelector('.card-video')).filter(Boolean);
-
   let activeCard = null;
   let expanded = false;
 
-  /* ---- folded pile ---- */
-  function pileVars(i, spread) {
-    const t = i / last;                       // 0 at the back, 1 on top
-    return {
-      x: (t - .5) * 34 * spread,
-      y: (t - .5) * -16 * spread,
-      rotation: (t - .5) * 9 * spread,
-      scale: 1 - (1 - t) * .05,
-      zIndex: i + 1
-    };
-  }
-
-  function layoutPile(spread = 1, animate = false) {
-    if (expanded) return;
-    const w = Math.min(260, Math.max(180, deck.clientWidth - 80));
-    const h = Math.min(Math.round(w * 1.72), deck.clientHeight - 96);
-    const left = Math.round((deck.clientWidth - w) / 2);
-    const top = Math.round((deck.clientHeight - h) / 2) - 44;
-    cards.forEach((card, i) => {
-      card.style.width = w + 'px';
-      card.style.height = h + 'px';
-      card.style.left = left + 'px';
-      card.style.top = top + 'px';
-      const vars = pileVars(i, spread);
-      animate ? gsap.to(card, { ...vars, duration: .55, ease: 'power3.out' }) : gsap.set(card, vars);
-    });
-    deck.classList.add('is-ready');
-  }
-
+  /* The resting row is laid out by CSS flex, so there is no geometry to
+     compute here — only the pull-to-centre card ever gets inline sizing. */
   function clearInline(card) {
     card.style.width = ''; card.style.height = ''; card.style.left = ''; card.style.top = '';
   }
@@ -287,7 +251,6 @@ const deckReels = (() => {
       duration: .9, ease: 'power3.inOut', absolute: true, stagger: .012,
       onComplete: () => ScrollTrigger.refresh()
     });
-    deckReels.restrict(null);          // everything on screen animates now
   }
 
   function collapse() {
@@ -297,13 +260,11 @@ const deckReels = (() => {
     expanded = false;
     deck.classList.remove('is-expanded');
     deck.classList.add('is-collapsed');
-    layoutPile();
     Flip.from(state, {
       duration: .8, ease: 'power3.inOut', absolute: true,
       stagger: { each: .01, from: 'end' },
       onComplete: () => ScrollTrigger.refresh()
     });
-    deckReels.restrict(topVideos);
   }
 
   /* ---- one card pulled to the middle ---- */
@@ -343,26 +304,26 @@ const deckReels = (() => {
   }
 
   /* ---- wiring ---- */
-  layoutPile();
-  deckReels.restrict(topVideos);
-  window.addEventListener('resize', () => { if (!expanded && !activeCard) layoutPile(); });
+  deck.classList.add('is-ready');
 
-  if (hasFineCursor) {
-    deck.addEventListener('mouseenter', () => {
-      if (expanded) return;
-      deck.classList.add('is-lit');       // glow up
-      layoutPile(1.5, true);              // and breathe apart a little
-    });
-    deck.addEventListener('mouseleave', () => {
-      deck.classList.remove('is-lit');
-      if (!expanded) layoutPile(1, true);
+  /* Clicking the row lights the whole thing up first, then unfolds — the flare
+     is the acknowledgement, so it has to land before the layout moves. */
+  function lightUpAndExpand() {
+    if (expanded || deck.classList.contains('is-lit')) return;
+    deck.classList.add('is-lit');
+    if (reduceMotion) { expand(); deck.classList.remove('is-lit'); return; }
+    gsap.to(cards, { y: -12, duration: .32, ease: 'power2.out', stagger: { each: .012, from: 'center' } });
+    gsap.delayedCall(.52, () => {
+      gsap.set(cards, { y: 0 });
+      expand();
+      gsap.delayedCall(.55, () => deck.classList.remove('is-lit'));
     });
   }
 
   deck.addEventListener('click', (e) => {
     if (e.target.closest('.card-req-btn')) return;   // let the mailto link work
     if (e.target.closest('.deck-collapse')) return;  // handled on the button
-    if (!expanded) { expand(); return; }
+    if (!expanded) { lightUpAndExpand(); return; }
 
     const closeBtn = e.target.closest('.card-close');
     const cardEl = e.target.closest('.deck-card');
