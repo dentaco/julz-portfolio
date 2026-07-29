@@ -188,120 +188,132 @@ if (reduceMotion) {
   });
 })();
 
-/* ============ DECK REEL PLAYBACK — one reel at a time ============ */
-/* Reels don't play on their own: the fan sits on its poster frames until a
-   card is picked. Picking one starts it and stops whatever was playing
-   before, so there is never more than a single reel running. */
+/* ============ DECK REEL PLAYBACK ============ */
+/* Reels animate on their own — the deck is meant to look alive. Two things
+   narrow that down: while the pile is folded only the top few cards are worth
+   decoding, and pulling a card out solos it so the rest hold still. */
 const deckReels = (() => {
-  let current = null;
+  const inView = new Set();
+  let allowed = null;          // null = anything in view may run
+  let solo = null, frozen = false;
 
+  const all = () => document.querySelectorAll('.card-video');
   const load = (v) => { if (v && !v.src) { v.src = v.dataset.videoSrc; v.load(); } };
-  const halt = (v, rewind) => {
-    if (!v) return;
-    v.pause();
-    if (rewind && v.readyState) { try { v.currentTime = 0; } catch (_) {} }
-  };
+
+  function sync() {
+    const awake = document.visibilityState === 'visible' && !frozen;
+    all().forEach((v) => {
+      const ambient = !reduceMotion && (!allowed || allowed.has(v));
+      const wanted = awake && inView.has(v) && (solo ? v === solo : ambient);
+      if (wanted) { load(v); if (v.paused) v.play().catch(() => {}); }
+      else if (!v.paused) v.pause();
+    });
+  }
 
   return {
-    load,
-    /* Start `v`, rewinding whatever was playing back to its poster frame. */
-    play(v) {
-      if (!v) return;
-      if (current && current !== v) halt(current, true);
-      current = v;
-      load(v);
-      v.play().catch(() => {});
+    load, sync,
+    track(v, visible) { visible ? inView.add(v) : inView.delete(v); sync(); },
+    /* Limit ambient playback to a subset (the visible top of the folded pile). */
+    restrict(list) { allowed = list ? new Set(list) : null; sync(); },
+    /* Pull one reel forward: it restarts, everything else stands down. */
+    solo(v) {
+      solo = v; frozen = false;
+      if (v) { load(v); if (v.readyState) { try { v.currentTime = 0; } catch (_) {} } }
+      sync();
     },
-    /* Pause without giving up the slot — used while a card is flipped over. */
-    pause() { halt(current, false); },
-    resume() { if (current) current.play().catch(() => {}); },
-    /* Drop the current reel entirely (card closed / scrolled away). */
-    stop(v) {
-      const target = v || current;
-      halt(target, true);
-      if (current === target) current = null;
-    },
-    get current() { return current; }
+    release() { solo = null; frozen = false; sync(); },
+    freeze(on) { frozen = on; sync(); }
   };
 })();
 
-/* ============ WORK DECK — fanned reels, click to pull out ============ */
+/* ============ WORK DECK — a pile that fans out into themed rows ============ */
 (() => {
   const deck = document.getElementById('deck');
   const deckOverlay = document.getElementById('deckOverlay');
+  const collapseBtn = document.getElementById('deckCollapse');
   if (!deck || !deckOverlay) return;
 
   const cards = Array.from(deck.querySelectorAll('.deck-card'));
-  const mid = (cards.length - 1) / 2;
-  const rotStep = 12 / Math.max(mid, 1);   // keep the fan tilt envelope ~+/-12deg
-  const yStep = 30 / Math.max(mid, 1);     // and the arc ~30px, whatever the count
-  const REST = cards.map((_, i) => ({ rot: (i - mid) * rotStep, y: Math.abs(i - mid) * yStep }));
-  let activeCard = null;
+  if (!cards.length) return;
+  const last = Math.max(cards.length - 1, 1);
+  /* only the cards you can actually see on the folded pile decode video */
+  const topVideos = cards.slice(-4).map((c) => c.querySelector('.card-video')).filter(Boolean);
 
-  function layoutDeck() {
-    if (!hasFineCursor) { deck.classList.add('is-ready'); return; }
-    const deckRect = deck.getBoundingClientRect();
-    const cardW = 230, cardH = 322;
-    const overlap = Math.min(150, (deckRect.width - cardW) / (cards.length - 1));
-    const totalWidth = cardW + overlap * (cards.length - 1);
-    const startX = Math.max(0, (deckRect.width - totalWidth) / 2);
+  let activeCard = null;
+  let expanded = false;
+
+  /* ---- folded pile ---- */
+  function pileVars(i, spread) {
+    const t = i / last;                       // 0 at the back, 1 on top
+    return {
+      x: (t - .5) * 34 * spread,
+      y: (t - .5) * -16 * spread,
+      rotation: (t - .5) * 9 * spread,
+      scale: 1 - (1 - t) * .05,
+      zIndex: i + 1
+    };
+  }
+
+  function layoutPile(spread = 1, animate = false) {
+    if (expanded) return;
+    const w = Math.min(260, Math.max(180, deck.clientWidth - 80));
+    const h = Math.min(Math.round(w * 1.72), deck.clientHeight - 96);
+    const left = Math.round((deck.clientWidth - w) / 2);
+    const top = Math.round((deck.clientHeight - h) / 2) - 44;
     cards.forEach((card, i) => {
-      const left = Math.round(startX + i * overlap) + 'px';
-      const top = '70px';
-      card.dataset.restLeft = left;
-      card.dataset.restTop = top;
-      card.dataset.restWidth = cardW + 'px';
-      card.dataset.restHeight = cardH + 'px';
-      if (!card.classList.contains('is-active')) {
-        card.style.width = cardW + 'px';
-        card.style.height = cardH + 'px';
-        card.style.left = left;
-        card.style.top = top;
-        gsap.set(card, { x: 0, y: REST[i].y, rotation: REST[i].rot, scale: 1, zIndex: i + 1 });
-      }
+      card.style.width = w + 'px';
+      card.style.height = h + 'px';
+      card.style.left = left + 'px';
+      card.style.top = top + 'px';
+      const vars = pileVars(i, spread);
+      animate ? gsap.to(card, { ...vars, duration: .55, ease: 'power3.out' }) : gsap.set(card, vars);
     });
     deck.classList.add('is-ready');
   }
-  layoutDeck();
-  window.addEventListener('resize', () => { if (!activeCard) layoutDeck(); });
 
-  if (hasFineCursor) {
-    deck.addEventListener('mousemove', (e) => {
-      if (activeCard) return;
-      const mouseX = e.clientX;
-      let closestIndex = 0, closestDist = Infinity;
-      cards.forEach((card, i) => {
-        const r = card.getBoundingClientRect();
-        const d = Math.abs(mouseX - (r.left + r.width / 2));
-        if (d < closestDist) { closestDist = d; closestIndex = i; }
-      });
-      cards.forEach((card, i) => {
-        const delta = i - closestIndex;
-        if (delta === 0) {
-          gsap.to(card, { rotation: 0, y: -40, scale: 1.12, x: 0, zIndex: 100, duration: .4, ease: 'power3.out' });
-        } else {
-          const dist = Math.min(Math.abs(delta), 3);
-          gsap.to(card, {
-            rotation: REST[i].rot, y: REST[i].y + dist * 6,
-            x: Math.sign(delta) * dist * 18, scale: 1 - dist * 0.02,
-            zIndex: 50 - dist, duration: .4, ease: 'power3.out'
-          });
-        }
-      });
-    });
-    deck.addEventListener('mouseleave', () => {
-      if (activeCard) return;
-      cards.forEach((card, i) => {
-        gsap.to(card, { rotation: REST[i].rot, y: REST[i].y, x: 0, scale: 1, zIndex: i + 1, duration: .5, ease: 'power3.out' });
-      });
-    });
+  function clearInline(card) {
+    card.style.width = ''; card.style.height = ''; card.style.left = ''; card.style.top = '';
   }
 
+  /* ---- fold / unfold ---- */
+  function expand() {
+    if (expanded) return;
+    expanded = true;
+    const state = Flip.getState(cards);
+    deck.classList.remove('is-collapsed', 'is-lit');
+    deck.classList.add('is-expanded');
+    cards.forEach((card) => { clearInline(card); gsap.set(card, { clearProps: 'transform,zIndex' }); });
+    Flip.from(state, {
+      duration: .9, ease: 'power3.inOut', absolute: true, stagger: .012,
+      onComplete: () => ScrollTrigger.refresh()
+    });
+    deckReels.restrict(null);          // everything on screen animates now
+  }
+
+  function collapse() {
+    if (!expanded) return;
+    if (activeCard) closeCard(activeCard);
+    const state = Flip.getState(cards);
+    expanded = false;
+    deck.classList.remove('is-expanded');
+    deck.classList.add('is-collapsed');
+    layoutPile();
+    Flip.from(state, {
+      duration: .8, ease: 'power3.inOut', absolute: true,
+      stagger: { each: .01, from: 'end' },
+      onComplete: () => ScrollTrigger.refresh()
+    });
+    deckReels.restrict(topVideos);
+  }
+
+  /* ---- one card pulled to the middle ---- */
   function openCard(card) {
     if (activeCard === card) return;
     if (activeCard) closeCard(activeCard);
     activeCard = card;
-    const state = Flip.getState(card);
+    // capture every card: the one leaving flow makes the rest reflow, and that
+    // shift should glide rather than jump
+    const state = Flip.getState(cards);
     card.classList.add('is-active');
     deck.classList.add('has-active');
     deckOverlay.classList.add('is-visible');
@@ -314,70 +326,74 @@ const deckReels = (() => {
     card.style.top = Math.round((window.innerHeight - h) / 2) + 'px';
     gsap.set(card, { rotation: 0, scale: 1, x: 0, y: 0, zIndex: 1000 });
     Flip.from(state, { duration: .65, ease: 'power3.inOut', scale: true, absolute: true });
-    deckReels.play(card.querySelector('.card-video'));
+    deckReels.solo(card.querySelector('.card-video'));
   }
 
   function closeCard(card) {
-    deckReels.stop(card.querySelector('.card-video'));
-    const state = Flip.getState(card);
-    const idx = cards.indexOf(card);
+    const state = Flip.getState(cards);
     card.classList.remove('is-active');
     card.classList.remove('is-flipped');
     deck.classList.remove('has-active');
     deckOverlay.classList.remove('is-visible');
-    if (hasFineCursor) {
-      card.style.width = card.dataset.restWidth;
-      card.style.height = card.dataset.restHeight;
-      card.style.left = card.dataset.restLeft;
-      card.style.top = card.dataset.restTop;
-      gsap.set(card, { rotation: REST[idx].rot, y: REST[idx].y, x: 0, scale: 1, zIndex: idx + 1 });
-    } else {
-      card.style.width = ''; card.style.height = ''; card.style.left = ''; card.style.top = '';
-      gsap.set(card, { clearProps: 'all' });
-    }
+    clearInline(card);
+    gsap.set(card, { clearProps: 'transform,zIndex' });
     Flip.from(state, { duration: .55, ease: 'power3.inOut', scale: true, absolute: true });
     if (activeCard === card) activeCard = null;
+    deckReels.release();
+  }
+
+  /* ---- wiring ---- */
+  layoutPile();
+  deckReels.restrict(topVideos);
+  window.addEventListener('resize', () => { if (!expanded && !activeCard) layoutPile(); });
+
+  if (hasFineCursor) {
+    deck.addEventListener('mouseenter', () => {
+      if (expanded) return;
+      deck.classList.add('is-lit');       // glow up
+      layoutPile(1.5, true);              // and breathe apart a little
+    });
+    deck.addEventListener('mouseleave', () => {
+      deck.classList.remove('is-lit');
+      if (!expanded) layoutPile(1, true);
+    });
   }
 
   deck.addEventListener('click', (e) => {
-    if (e.target.closest('.card-req-btn')) return; // let the mailto link work
+    if (e.target.closest('.card-req-btn')) return;   // let the mailto link work
+    if (e.target.closest('.deck-collapse')) return;  // handled on the button
+    if (!expanded) { expand(); return; }
+
     const closeBtn = e.target.closest('.card-close');
     const cardEl = e.target.closest('.deck-card');
     if (!cardEl) return;
     if (closeBtn) { e.stopPropagation(); closeCard(cardEl); return; }
     if (cardEl.classList.contains('is-active')) {
-      // flipped to the request side — hold the reel where it is, resume on the way back
-      const showingBack = cardEl.classList.toggle('is-flipped');
-      showingBack ? deckReels.pause() : deckReels.resume();
+      // flipped to the request side — hold the reel, resume on the way back
+      deckReels.freeze(cardEl.classList.toggle('is-flipped'));
     } else {
       openCard(cardEl);
     }
   });
+
+  if (collapseBtn) collapseBtn.addEventListener('click', collapse);
   deckOverlay.addEventListener('click', () => { if (activeCard) closeCard(activeCard); });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && activeCard) closeCard(activeCard); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    if (activeCard) closeCard(activeCard);
+    else if (expanded) collapse();
+  });
 })();
 
-/* ============ DECK REEL VIDEOS — lazy source, playback driven by selection ============ */
+/* ============ DECK REEL VIDEOS — track what is on screen ============ */
 (() => {
   const videos = document.querySelectorAll('.card-video');
   if (!videos.length) return;
-
-  // Attach the source as a card nears the viewport so the first click starts
-  // near-instantly; playback itself is owned by deckReels, not by visibility.
   const io = new IntersectionObserver((entries) => {
-    entries.forEach(({ target: v, isIntersecting }) => {
-      if (isIntersecting) deckReels.load(v);
-      else if (deckReels.current === v) deckReels.stop(v);
-    });
-  }, { rootMargin: '200px 0px' });
+    entries.forEach(({ target: v, isIntersecting }) => deckReels.track(v, isIntersecting));
+  }, { rootMargin: '250px 0px' });
   videos.forEach((v) => io.observe(v));
-
-  // Leaving the tab pauses the running reel; coming back picks it up again —
-  // unless the card was left flipped to its request side.
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState !== 'visible') { deckReels.pause(); return; }
-    if (!document.querySelector('.deck-card.is-active.is-flipped')) deckReels.resume();
-  });
+  document.addEventListener('visibilitychange', () => deckReels.sync());
 })();
 
 /* ============ WORK CARDS — gentle idle float ============ */
