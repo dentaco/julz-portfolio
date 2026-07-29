@@ -188,6 +188,43 @@ if (reduceMotion) {
   });
 })();
 
+/* ============ DECK REEL PLAYBACK — one reel at a time ============ */
+/* Reels don't play on their own: the fan sits on its poster frames until a
+   card is picked. Picking one starts it and stops whatever was playing
+   before, so there is never more than a single reel running. */
+const deckReels = (() => {
+  let current = null;
+
+  const load = (v) => { if (v && !v.src) { v.src = v.dataset.videoSrc; v.load(); } };
+  const halt = (v, rewind) => {
+    if (!v) return;
+    v.pause();
+    if (rewind && v.readyState) { try { v.currentTime = 0; } catch (_) {} }
+  };
+
+  return {
+    load,
+    /* Start `v`, rewinding whatever was playing back to its poster frame. */
+    play(v) {
+      if (!v) return;
+      if (current && current !== v) halt(current, true);
+      current = v;
+      load(v);
+      v.play().catch(() => {});
+    },
+    /* Pause without giving up the slot — used while a card is flipped over. */
+    pause() { halt(current, false); },
+    resume() { if (current) current.play().catch(() => {}); },
+    /* Drop the current reel entirely (card closed / scrolled away). */
+    stop(v) {
+      const target = v || current;
+      halt(target, true);
+      if (current === target) current = null;
+    },
+    get current() { return current; }
+  };
+})();
+
 /* ============ WORK DECK — fanned reels, click to pull out ============ */
 (() => {
   const deck = document.getElementById('deck');
@@ -277,9 +314,11 @@ if (reduceMotion) {
     card.style.top = Math.round((window.innerHeight - h) / 2) + 'px';
     gsap.set(card, { rotation: 0, scale: 1, x: 0, y: 0, zIndex: 1000 });
     Flip.from(state, { duration: .65, ease: 'power3.inOut', scale: true, absolute: true });
+    deckReels.play(card.querySelector('.card-video'));
   }
 
   function closeCard(card) {
+    deckReels.stop(card.querySelector('.card-video'));
     const state = Flip.getState(card);
     const idx = cards.indexOf(card);
     card.classList.remove('is-active');
@@ -307,7 +346,9 @@ if (reduceMotion) {
     if (!cardEl) return;
     if (closeBtn) { e.stopPropagation(); closeCard(cardEl); return; }
     if (cardEl.classList.contains('is-active')) {
-      cardEl.classList.toggle('is-flipped');
+      // flipped to the request side — hold the reel where it is, resume on the way back
+      const showingBack = cardEl.classList.toggle('is-flipped');
+      showingBack ? deckReels.pause() : deckReels.resume();
     } else {
       openCard(cardEl);
     }
@@ -316,26 +357,26 @@ if (reduceMotion) {
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && activeCard) closeCard(activeCard); });
 })();
 
-/* ============ DECK REEL VIDEOS — lazy load + play only when visible ============ */
+/* ============ DECK REEL VIDEOS — lazy source, playback driven by selection ============ */
 (() => {
   const videos = document.querySelectorAll('.card-video');
   if (!videos.length) return;
+
+  // Attach the source as a card nears the viewport so the first click starts
+  // near-instantly; playback itself is owned by deckReels, not by visibility.
   const io = new IntersectionObserver((entries) => {
     entries.forEach(({ target: v, isIntersecting }) => {
-      if (isIntersecting) {
-        if (!v.src) { v.src = v.dataset.videoSrc; v.load(); }
-        if (!reduceMotion) v.play().catch(() => {});
-      } else if (!v.paused) { v.pause(); }
+      if (isIntersecting) deckReels.load(v);
+      else if (deckReels.current === v) deckReels.stop(v);
     });
   }, { rootMargin: '200px 0px' });
   videos.forEach((v) => io.observe(v));
+
+  // Leaving the tab pauses the running reel; coming back picks it up again —
+  // unless the card was left flipped to its request side.
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState !== 'visible' || reduceMotion) return;
-    videos.forEach((v) => {
-      if (!v.src || !v.paused) return;
-      const r = v.getBoundingClientRect();
-      if (r.bottom > -200 && r.top < window.innerHeight + 200) v.play().catch(() => {});
-    });
+    if (document.visibilityState !== 'visible') { deckReels.pause(); return; }
+    if (!document.querySelector('.deck-card.is-active.is-flipped')) deckReels.resume();
   });
 })();
 
