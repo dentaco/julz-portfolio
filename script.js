@@ -21,7 +21,7 @@ window.addEventListener('load', () => {
       playHero();
     }
   });
-  gsap.set('.preloader-fill', { '--rise': '0%' });
+  gsap.set('.preloader-fill', { '--rise': '-34%' });   // fully dark: feather below the glyphs
   gsap.set('.preloader-word', { y: 34 });
   gsap.set('.preloader-scan', { xPercent: -50, yPercent: -50, top: '84%', scale: .5, opacity: 0 });
   // свет мягко всплывает снизу вверх — имя разгорается, будто восходит солнце

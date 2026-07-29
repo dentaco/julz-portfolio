@@ -89,19 +89,24 @@ h1,h2,h3{font-family:'Fraunces',serif;}
 /* имя — крупно, тем же шрифтом что и hero (Fraunces 600, -1px) */
 .preloader-word{
   position:relative;font-family:'Fraunces',serif;font-weight:600;letter-spacing:-1px;
-  font-size:clamp(60px,13vw,150px);line-height:.98;color:rgba(255,255,255,.05);
+  font-size:clamp(60px,13vw,150px);line-height:.98;
+  /* the unlit name is fully invisible — only the rising fill ever reveals it */
+  color:transparent;
   /* glow lives on the parent — putting it on the clipped-text fill leaks a box */
   filter:drop-shadow(0 0 22px var(--glow)) drop-shadow(0 0 60px rgba(93,242,255,.4));
 }
-.preloader-word .dot{color:rgba(255,255,255,.07);}
+.preloader-word .dot{color:transparent;}
 /* неоновая заливка, проявляющаяся сверху вниз */
 .preloader-fill{
   position:absolute;inset:0;color:transparent;
   background:linear-gradient(180deg,var(--neon) 0%,var(--neon-lite) 60%,#ffffff 100%);
   -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
-  /* soft bottom-to-top rise with a feathered edge — light "floats" up like a sunrise */
-  -webkit-mask-image:linear-gradient(to top, #000 var(--rise,0%), transparent calc(var(--rise,0%) + 34%));
-  mask-image:linear-gradient(to top, #000 var(--rise,0%), transparent calc(var(--rise,0%) + 34%));
+  /* soft bottom-to-top rise with a feathered edge — light "floats" up like a sunrise.
+     Starts at -34% so the whole feather sits below the glyphs: at rest nothing is
+     lit at all, not even the bottom edge. Animates to 100% for a fully lit name. */
+  --rise:-34%;
+  -webkit-mask-image:linear-gradient(to top, #000 var(--rise,-34%), transparent calc(var(--rise,-34%) + 34%));
+  mask-image:linear-gradient(to top, #000 var(--rise,-34%), transparent calc(var(--rise,-34%) + 34%));
 }
 .preloader-fill .dot{color:var(--neon);}
 /* мягкое рассеянное свечение — «встающее солнце» за надписью, без резких краёв */
