@@ -178,9 +178,36 @@ h1,h2,h3{font-family:'Fraunces',serif;}
   position:relative;min-height:100vh;width:100%;overflow:hidden;
   display:flex;align-items:flex-end;
   padding:120px 48px 100px;
-  background:
-    linear-gradient(95deg,#58b8ea 0%,var(--sky-deep) 26%,rgba(127,205,243,.82) 40%,rgba(127,205,243,0) 60%),
-    url('images/popart-hero.jpg') center 22%/cover no-repeat;
+  /* the wash now sits *under* the artwork — the artwork itself feathers away
+     over it, so the left edge blends instead of being hidden by flat colour */
+  background:linear-gradient(95deg,#58b8ea 0%,var(--sky-deep) 30%,rgba(127,205,243,.9) 54%,rgba(127,205,243,0) 78%);
+}
+/* Artwork on its own layer: lets it be zoomed past `cover` and masked, which
+   a background layer on .hero can do neither of. Scaled about her face so the
+   composition holds while the frame grows. */
+.hero::before{
+  content:'';position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:url('images/popart-hero.jpg') center 22%/cover no-repeat;
+  transform:scale(1.14);transform-origin:34% 40%;
+  -webkit-mask-image:linear-gradient(95deg,
+    transparent 0%, rgba(0,0,0,.05) 22%, rgba(0,0,0,.20) 34%,
+    rgba(0,0,0,.48) 46%, rgba(0,0,0,.78) 58%, rgba(0,0,0,.95) 68%, #000 76%);
+  mask-image:linear-gradient(95deg,
+    transparent 0%, rgba(0,0,0,.05) 22%, rgba(0,0,0,.20) 34%,
+    rgba(0,0,0,.48) 46%, rgba(0,0,0,.78) 58%, rgba(0,0,0,.95) 68%, #000 76%);
+}
+@media(max-width:820px){
+  /* the crop is far tighter here, so a long feather would swallow her face —
+     keep the zoom gentle and pull the fade back toward the edge */
+  .hero::before{
+    transform:scale(1.06);transform-origin:42% 34%;
+    -webkit-mask-image:linear-gradient(95deg,
+      transparent 0%, rgba(0,0,0,.18) 15%, rgba(0,0,0,.5) 32%,
+      rgba(0,0,0,.82) 50%, #000 64%);
+    mask-image:linear-gradient(95deg,
+      transparent 0%, rgba(0,0,0,.18) 15%, rgba(0,0,0,.5) 32%,
+      rgba(0,0,0,.82) 50%, #000 64%);
+  }
 }
 .hero-blob{position:absolute;border-radius:50%;filter:blur(50px);opacity:.55;pointer-events:none;}
 .hero-blob-a,.hero-blob-c{display:none;}
