@@ -545,7 +545,7 @@ h1,h2,h3{font-family:'Fraunces',serif;}
 }
 .polaroid img{border-radius:2px;aspect-ratio:4/5;object-fit:cover;width:100%;}
 .polaroid figcaption{
-  font-family:'Dancing Script',cursive;font-weight:700;font-size:23px;text-align:center;margin-top:14px;color:var(--ink);
+  font-family:'Caveat Brush',cursive;font-weight:400;font-size:26px;text-align:center;margin-top:12px;color:var(--ink);
 }
 .p-1{transform:rotate(-6deg);}
 .p-2{transform:rotate(3deg) translateY(20px);}
@@ -580,7 +580,8 @@ h1,h2,h3{font-family:'Fraunces',serif;}
 .about-portrait img{width:100%;height:100%;object-fit:cover;display:block;}
 .portrait-tag{
   position:absolute;bottom:20px;left:20px;background:#fff;color:var(--ink);
-  font-family:'Caveat',cursive;font-weight:700;font-size:20px;padding:8px 18px;border-radius:100px;
+  font-family:'Permanent Marker',cursive;font-weight:400;font-size:19px;letter-spacing:.3px;
+  padding:9px 20px;border-radius:100px;
   transform:rotate(-4deg);box-shadow:0 10px 20px rgba(14,42,58,.2);
 }
 .about-text h2{font-size:clamp(30px,4vw,44px);font-weight:600;color:var(--ink);margin:10px 0 22px;letter-spacing:-.5px;}
@@ -617,8 +618,8 @@ h1,h2,h3{font-family:'Fraunces',serif;}
 }
 .growth-shot img{border-radius:8px;width:100%;display:block;}
 .growth-shot figcaption{
-  font-family:'Dancing Script',cursive;font-weight:700;font-size:23px;
-  text-align:center;margin-top:14px;color:var(--ink);
+  font-family:'Caveat Brush',cursive;font-weight:400;font-size:26px;
+  text-align:center;margin-top:12px;color:var(--ink);
 }
 .growth-shot:hover{transform:rotate(0deg) translateY(-6px) scale(1.02);box-shadow:0 32px 70px rgba(14,42,58,.34);}
 .growth-text h2{
