@@ -616,7 +616,9 @@ h1,h2,h3{font-family:'Fraunces',serif;}
   box-shadow:0 26px 60px rgba(14,42,58,.28);transform:rotate(-3deg);
   transition:transform .4s var(--ease),box-shadow .4s var(--ease);
 }
-.growth-shot img{border-radius:8px;width:100%;display:block;}
+/* width/height attributes on the img reserve the right box while it loads,
+   but their height would otherwise win here — so hand it back to the ratio. */
+.growth-shot img{border-radius:8px;width:100%;height:auto;display:block;}
 .growth-shot figcaption{
   font-family:'Caveat Brush',cursive;font-weight:400;font-size:26px;
   text-align:center;margin-top:12px;color:var(--ink);

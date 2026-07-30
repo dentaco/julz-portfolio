@@ -198,13 +198,47 @@ const deckReels = (() => {
   const all = () => document.querySelectorAll('.card-video');
   const load = (v) => { if (v && !v.src) { v.src = v.dataset.videoSrc; v.load(); } };
 
+  /* A phone will not carry sixteen decoders. iOS caps how many videos it will
+     decode at once and, once it is under memory pressure, starts throwing away
+     decoded images — which is why the charts further down the page came back
+     blank. So on small screens only the few reels nearest the middle of the
+     screen actually run. */
+  const small = window.matchMedia('(max-width: 820px)');
+  const AMBIENT_CAP = 4;
+
+  function ambientSet() {
+    if (!small.matches) return null;                 // desktop: no cap
+    const mid = window.innerHeight / 2;
+    return new Set(
+      [...all()]
+        .filter((v) => inView.has(v))
+        .sort((a, b) => {
+          const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
+          return Math.abs(ra.top + ra.height / 2 - mid) - Math.abs(rb.top + rb.height / 2 - mid);
+        })
+        .slice(0, AMBIENT_CAP)
+    );
+  }
+
   function sync() {
     const awake = document.visibilityState === 'visible' && !frozen;
+    const near = solo ? null : ambientSet();
     all().forEach((v) => {
-      const wanted = awake && inView.has(v) && (solo ? v === solo : !reduceMotion);
+      const ambient = !reduceMotion && (!near || near.has(v));
+      const wanted = awake && inView.has(v) && (solo ? v === solo : ambient);
       if (wanted) { load(v); if (v.paused) v.play().catch(() => {}); }
       else if (!v.paused) v.pause();
     });
+  }
+
+  // which reels are nearest the middle changes as you scroll, so re-pick then
+  if (small.matches) {
+    let queued = false;
+    window.addEventListener('scroll', () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(() => { queued = false; sync(); });
+    }, { passive: true });
   }
 
   return {
