@@ -296,6 +296,28 @@ const deckReels = (() => {
     deck.classList.add('is-ready');
   }
 
+  /* Which card is under the pointer, worked out from the angle around the
+     fan's pivot rather than from which element caught the event. The cards
+     overlap heavily and the lifted one grows and jumps to the front, so
+     element hit-testing skips around instead of stepping card by card; the
+     angle is monotonic across the fan, so it never does. */
+  function fanIndexAt(clientX, clientY) {
+    if (!fan || cards.length < 2) return -1;
+    const r = deck.getBoundingClientRect();
+    const px = r.left + fan.left + fan.cardW / 2;      // pivot, in page coords
+    const py = r.top + 18 + fan.cardH * PIVOT;
+    const dx = clientX - px;
+    const dy = py - clientY;                            // upward is positive
+    const dist = Math.hypot(dx, dy);
+    // ignore anything off the band the cards actually occupy
+    if (dist < fan.radius - fan.cardH / 2 - 24 || dist > fan.radius + fan.cardH / 2 + 24) return -1;
+    const deg = Math.atan2(dx, dy) * 180 / Math.PI;
+    const step = SPREAD / (cards.length - 1);
+    const i = Math.round((deg + SPREAD / 2) / step);
+    if (i < 0 || i > cards.length - 1) return -1;
+    return i;
+  }
+
   /* Hovering slides one card out along its own axis, the way you'd thumb a
      card up out of a hand. */
   function liftCard(card, on) {
@@ -380,10 +402,17 @@ const deckReels = (() => {
   window.addEventListener('resize', () => { if (!expanded && !activeCard) layoutFan(); });
 
   if (hasFineCursor) {
-    cards.forEach((card) => {
-      card.addEventListener('mouseenter', () => liftCard(card, true));
-      card.addEventListener('mouseleave', () => liftCard(card, false));
+    let hovered = -1;
+    const setHover = (i) => {
+      if (i === hovered) return;
+      if (hovered >= 0) liftCard(cards[hovered], false);
+      hovered = i;
+      if (i >= 0) liftCard(cards[i], true);
+    };
+    deck.addEventListener('mousemove', (e) => {
+      setHover(expanded ? -1 : fanIndexAt(e.clientX, e.clientY));
     });
+    deck.addEventListener('mouseleave', () => setHover(-1));
   }
 
   /* Clicking the fan lights the whole thing up first, then unfolds — the flare
