@@ -426,6 +426,19 @@ h1,h2,h3{font-family:'Fraunces',serif;}
   font-family:'Fraunces',serif;font-style:italic;font-size:13px;color:#fff;
   background:rgba(14,42,58,.45);padding:3px 11px;border-radius:100px;backdrop-filter:blur(4px);
 }
+/* view count on the reels that have one — the same ink pill with a lemon play
+   glyph the old lightbox badges used. Hidden on the folded row, where a card
+   is far too narrow to read it. */
+.card-views{
+  position:absolute;right:10px;bottom:10px;z-index:2;pointer-events:none;
+  display:inline-flex;align-items:center;gap:5px;
+  background:rgba(14,42,58,.72);backdrop-filter:blur(6px);
+  color:#fff;font-family:'DM Sans',sans-serif;font-weight:800;font-size:12.5px;letter-spacing:.4px;
+  padding:5px 11px;border-radius:100px;border:1px solid rgba(255,255,255,.22);
+}
+.card-views::before{content:'\25B6';font-size:8px;color:var(--lemon);}
+.deck.is-collapsed .card-views{display:none;}
+
 .card-close{
   position:absolute;top:12px;right:12px;z-index:3;width:32px;height:32px;border-radius:50%;
   background:rgba(14,42,58,.55);color:#fff;border:none;font-size:14px;cursor:pointer;
@@ -509,6 +522,7 @@ h1,h2,h3{font-family:'Fraunces',serif;}
 @media(max-width:820px){
   .deck-hint{padding:0 24px;}
   .deck-note{padding:0 24px;font-size:13.5px;}
+  .card-views{font-size:11px;padding:4px 9px;right:7px;bottom:7px;}
   .deck{margin-top:40px;}
   /* 15 cards across a phone would be slivers — keep them legible and let the
      row scroll sideways instead */
