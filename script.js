@@ -233,10 +233,76 @@ const deckReels = (() => {
   let activeCard = null;
   let expanded = false;
 
-  /* The resting row is laid out by CSS flex, so there is no geometry to
-     compute here — only the pull-to-centre card ever gets inline sizing. */
   function clearInline(card) {
     card.style.width = ''; card.style.height = ''; card.style.left = ''; card.style.top = '';
+  }
+
+  /* ---- the fan ----
+     Every card is stacked on the same spot and rotated about a pivot far
+     below it, which is what turns the stack into an arc: same trick a real
+     fanned hand of cards uses. The pivot distance is solved from the
+     container width so the spread always fits, whatever the screen. */
+  const SPREAD = 104;              // total degrees, end to end
+  const HALF = (SPREAD / 2) * Math.PI / 180;
+  const RATIO = 1.72;              // card height / width
+  const PIVOT = 1.62;              // pivot sits this many card-heights below the top edge
+  let fan = null;
+
+  function measureFan() {
+    const deckW = deck.clientWidth || 1;
+    // Keeping the pivot close to the cards is what makes it read as a held
+    // hand rather than a rainbow, so the pivot is fixed and the card size is
+    // solved from the room available instead of the other way round.
+    const rNorm = (PIVOT - 0.5) * RATIO;                 // radius, in card widths
+    const halfSpan = rNorm * Math.sin(HALF) + 0.5;       // fan half-width, in card widths
+    const cardW = Math.max(72, Math.min(190, (deckW * 0.94) / (2 * halfSpan)));
+    const cardH = Math.round(cardW * RATIO);
+    const radius = (PIVOT - 0.5) * cardH;
+    const rise = radius * (1 - Math.cos(HALF));          // how far the ends drop
+    return {
+      cardW: Math.round(cardW),
+      cardH,
+      radius,
+      originPct: PIVOT * 100,      // measured from the card's own top edge
+      height: Math.round(cardH + rise + 92),             // + room for the cue
+      left: Math.round((deckW - cardW) / 2)
+    };
+  }
+
+  function cardAngle(i) {
+    return cards.length < 2 ? 0 : -SPREAD / 2 + (SPREAD / (cards.length - 1)) * i;
+  }
+
+  function layoutFan() {
+    if (expanded) return;
+    fan = measureFan();
+    deck.style.setProperty('--fan-h', fan.height + 'px');
+    cards.forEach((card, i) => {
+      card.style.width = fan.cardW + 'px';
+      card.style.height = fan.cardH + 'px';
+      card.style.left = fan.left + 'px';
+      card.style.top = '18px';
+      gsap.set(card, {
+        rotation: cardAngle(i),
+        transformOrigin: `50% ${fan.originPct}%`,
+        x: 0, y: 0, scale: 1, zIndex: i + 1
+      });
+    });
+    deck.classList.add('is-ready');
+  }
+
+  /* Hovering slides one card out along its own axis, the way you'd thumb a
+     card up out of a hand. */
+  function liftCard(card, on) {
+    if (expanded || !fan) return;
+    const i = cards.indexOf(card);
+    gsap.to(card, {
+      y: on ? -26 : 0,
+      scale: on ? 1.06 : 1,
+      zIndex: on ? 200 : i + 1,
+      duration: .38,
+      ease: 'power3.out'
+    });
   }
 
   /* ---- fold / unfold ---- */
@@ -260,6 +326,7 @@ const deckReels = (() => {
     expanded = false;
     deck.classList.remove('is-expanded');
     deck.classList.add('is-collapsed');
+    layoutFan();
     Flip.from(state, {
       duration: .8, ease: 'power3.inOut', absolute: true,
       stagger: { each: .01, from: 'end' },
@@ -304,16 +371,25 @@ const deckReels = (() => {
   }
 
   /* ---- wiring ---- */
-  deck.classList.add('is-ready');
+  layoutFan();
+  window.addEventListener('resize', () => { if (!expanded && !activeCard) layoutFan(); });
 
-  /* Clicking the row lights the whole thing up first, then unfolds — the flare
+  if (hasFineCursor) {
+    cards.forEach((card) => {
+      card.addEventListener('mouseenter', () => liftCard(card, true));
+      card.addEventListener('mouseleave', () => liftCard(card, false));
+    });
+  }
+
+  /* Clicking the fan lights the whole thing up first, then unfolds — the flare
      is the acknowledgement, so it has to land before the layout moves. */
   function lightUpAndExpand() {
     if (expanded || deck.classList.contains('is-lit')) return;
     deck.classList.add('is-lit');
     if (reduceMotion) { expand(); deck.classList.remove('is-lit'); return; }
-    gsap.to(cards, { y: -12, duration: .32, ease: 'power2.out', stagger: { each: .012, from: 'center' } });
-    gsap.delayedCall(.52, () => {
+    // the whole hand lifts along the arc, edges last
+    gsap.to(cards, { y: -20, duration: .34, ease: 'power2.out', stagger: { each: .014, from: 'center' } });
+    gsap.delayedCall(.54, () => {
       gsap.set(cards, { y: 0 });
       expand();
       gsap.delayedCall(.55, () => deck.classList.remove('is-lit'));

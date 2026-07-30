@@ -321,21 +321,18 @@ h1,h2,h3{font-family:'Fraunces',serif;}
 .deck-card{cursor:pointer;opacity:0;}
 .deck.is-ready .deck-card{opacity:1;transition:opacity .6s ease;}
 
-/* ---- resting: every reel laid out in one row ---- */
-.deck.is-collapsed{
-  display:flex;align-items:center;gap:9px;padding:26px 48px 84px;
-}
-/* the theme wrappers step out of the box model so all 15 cards become
-   siblings in the one flex row */
+/* ---- resting: the reels fanned out like a hand of cards ---- */
+/* Height comes from JS, which works out the arc from the container width. */
+.deck.is-collapsed{height:var(--fan-h,560px);}
+/* the theme wrappers step out of the box model so all the cards can be
+   placed on the arc as siblings */
 .deck.is-collapsed .deck-group,
 .deck.is-collapsed .deck-group-grid{display:contents;}
 .deck.is-collapsed .deck-group-head,
 .deck.is-collapsed .deck-collapse{display:none;}
-.deck.is-collapsed .deck-card{
-  flex:1 1 0;min-width:0;aspect-ratio:9/16;
-  transition:transform .4s var(--ease);
-}
-.deck.is-collapsed .deck-card:hover{transform:translateY(-8px);}
+/* every card sits at the same spot and is rotated about a pivot far below,
+   so they radiate into an arc the way a real fanned deck does */
+.deck.is-collapsed .deck-card{position:absolute;top:0;left:0;}
 
 /* clicking the row lights the whole strip — a wide aura behind it, plus a
    neon rim on every card at once */
@@ -524,14 +521,6 @@ h1,h2,h3{font-family:'Fraunces',serif;}
   .deck-note{padding:0 24px;font-size:13.5px;}
   .card-views{font-size:11px;padding:4px 9px;right:7px;bottom:7px;}
   .deck{margin-top:40px;}
-  /* 15 cards across a phone would be slivers — keep them legible and let the
-     row scroll sideways instead */
-  .deck.is-collapsed{
-    padding:16px 24px 68px;gap:8px;
-    overflow-x:auto;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;
-  }
-  .deck.is-collapsed::-webkit-scrollbar{display:none;}
-  .deck.is-collapsed .deck-card{flex:0 0 104px;scroll-snap-align:center;}
   .deck-glow{width:94%;height:250px;filter:blur(30px);}
   .deck-group{margin-top:54px;}
   .deck-group-head{padding:0 24px;margin-bottom:18px;gap:10px;}
