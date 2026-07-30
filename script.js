@@ -362,12 +362,16 @@ const deckReels = (() => {
     return list.indexOf(card) + 1;
   }
 
-  /* Hovering thumbs a card up out of the hand. */
+  /* Hovering thumbs a card up out of the hand — a nudge, not a leap.
+     Deliberately no scale: the transform origin is the fan's pivot, far below
+     the card, so scaling up shoves the card away from it. At the big fan's
+     radius even 1.025 threw it ~78px, which is what made the hover look
+     cartoonish. Raising the z-index already brings the card clear of its
+     neighbours, so the lift only has to travel a little. */
   function liftCard(card, on) {
     if (!card || card.classList.contains('is-active')) return;
     gsap.to(card, {
-      y: on ? (expanded ? -16 : -26) : 0,
-      scale: on ? 1.06 : 1,
+      y: on ? (expanded ? -14 : -12) : 0,
       zIndex: on ? 200 : homeZ(card),
       duration: .38, ease: 'power3.out'
     });
