@@ -242,34 +242,31 @@ const deckReels = (() => {
      below it, which is what turns the stack into an arc: same trick a real
      fanned hand of cards uses. The pivot distance is solved from the
      container width so the spread always fits, whatever the screen. */
-  /* Halving the bend means halving the angle *and* pushing the pivot further
-     out: on its own, a smaller angle would just bunch the cards into a
-     narrower fan rather than flatten the one we have. The pivot below keeps
-     the arc's horizontal reach where it was, so the hand stays the same width
-     and only the curve relaxes. */
-  const SPREAD = 52;               // total degrees, end to end
+  /* Two things set the shape: the sweep angle and how far the arc reaches
+     sideways. They are related by rise = reach * tan(SPREAD/4) — so with the
+     reach pinned to the container, a smaller angle is what flattens the arc.
+     The reach is taken from the width first and the pivot solved to match,
+     which is what lets the hand stretch nearly edge to edge. */
+  const SPREAD = 20;               // total degrees, end to end
   const HALF = (SPREAD / 2) * Math.PI / 180;
   const RATIO = 1.72;              // card height / width
-  const PIVOT = 2.52;              // pivot sits this many card-heights below the top edge
   let fan = null;
 
   function measureFan() {
     const deckW = deck.clientWidth || 1;
-    // Keeping the pivot close to the cards is what makes it read as a held
-    // hand rather than a rainbow, so the pivot is fixed and the card size is
-    // solved from the room available instead of the other way round.
-    const rNorm = (PIVOT - 0.5) * RATIO;                 // radius, in card widths
-    const halfSpan = rNorm * Math.sin(HALF) + 0.5;       // fan half-width, in card widths
-    const cardW = Math.max(72, Math.min(190, (deckW * 0.94) / (2 * halfSpan)));
+    const cardW = Math.max(72, Math.min(190, deckW * 0.155));
     const cardH = Math.round(cardW * RATIO);
-    const radius = (PIVOT - 0.5) * cardH;
-    const rise = radius * (1 - Math.cos(HALF));          // how far the ends drop
+    const reach = Math.max(60, (deckW * 0.92 - cardW) / 2);   // half the arc's span
+    const radius = reach / Math.sin(HALF);
+    const rise = radius * (1 - Math.cos(HALF));               // how far the ends drop
     return {
       cardW: Math.round(cardW),
       cardH,
       radius,
-      originPct: PIVOT * 100,      // measured from the card's own top edge
-      height: Math.round(cardH + rise + 92),             // + room for the cue
+      // pivot distance from the card's top edge, as a % of its own height
+      originPct: ((radius + cardH / 2) / cardH) * 100,
+      pivotY: 18 + cardH / 2 + radius,                        // from the deck's top
+      height: Math.round(cardH + rise + 92),                  // + room for the cue
       left: Math.round((deckW - cardW) / 2)
     };
   }
@@ -305,7 +302,7 @@ const deckReels = (() => {
     if (!fan || cards.length < 2) return -1;
     const r = deck.getBoundingClientRect();
     const px = r.left + fan.left + fan.cardW / 2;      // pivot, in page coords
-    const py = r.top + 18 + fan.cardH * PIVOT;
+    const py = r.top + fan.pivotY;
     const dx = clientX - px;
     const dy = py - clientY;                            // upward is positive
     const dist = Math.hypot(dx, dy);
