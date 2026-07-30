@@ -326,8 +326,6 @@ h1,h2,h3{font-family:'Fraunces',serif;}
 .deck.is-collapsed{height:var(--fan-h,560px);}
 /* the theme wrappers step out of the box model so all the cards can be
    placed on the arc as siblings */
-.deck.is-collapsed .deck-group,
-.deck.is-collapsed .deck-group-grid{display:contents;}
 .deck.is-collapsed .deck-group-head,
 .deck.is-collapsed .deck-collapse{display:none;}
 /* every card sits at the same spot and is rotated about a pivot far below,
@@ -359,29 +357,32 @@ h1,h2,h3{font-family:'Fraunces',serif;}
 }
 .deck.is-lit .deck-pile-label{color:var(--pink-deep);}
 
-/* ---- expanded: themed grid, staggered like a feed ---- */
+/* ---- expanded: a grid of small decks, each captioned ---- */
 .deck.is-expanded{height:auto;padding-bottom:20px;}
-.deck-group{margin-top:76px;}
-.deck-group:first-of-type{margin-top:8px;}
-.deck-group-head{
-  display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;
-  max-width:1240px;margin:0 auto 26px;padding:0 48px;
+.deck-groups{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:56px 30px;
+  max-width:1240px;margin:0 auto;padding:0 48px;align-items:start;
 }
-.deck-group-head h3{font-family:'Fraunces',serif;font-size:27px;font-weight:600;color:var(--ink);}
-.deck-group-head p{font-size:14px;color:var(--soft);flex:1 1 240px;}
+.deck-group-fan{position:relative;}          /* JS places the mini fan inside */
+.deck.is-expanded .deck-card{position:absolute;top:0;left:0;}
+.deck-group-head{margin-top:22px;text-align:center;}
+.deck-group-head h3{
+  font-family:'Fraunces',serif;font-size:23px;font-weight:600;color:var(--ink);
+  display:inline-block;vertical-align:middle;
+}
 .deck-group-count{
-  font-size:11.5px;letter-spacing:2px;text-transform:uppercase;color:var(--pink-deep);font-weight:700;
+  display:inline-block;vertical-align:middle;margin-left:10px;
+  font-size:10.5px;letter-spacing:1.8px;text-transform:uppercase;
+  color:var(--pink-deep);font-weight:700;
 }
-.deck-group-grid{
-  display:grid;grid-template-columns:1fr 1.12fr 1fr;gap:24px;
-  max-width:940px;margin:0 auto;padding:0 48px;align-items:start;
+.deck-group-head p{
+  margin-top:10px;font-size:13.5px;line-height:1.7;color:var(--soft);
+  max-width:38ch;margin-left:auto;margin-right:auto;
 }
-/* a two-reel theme would otherwise leave a hole in the third column */
-.deck-group-grid[data-count="2"]{grid-template-columns:1fr 1.12fr;max-width:660px;}
-/* middle column rides lower and larger — the reference layout's rhythm.
-   Scoped to the open state: while collapsed these cards sit in the flat row. */
-.deck.is-expanded .deck-group-grid > .deck-card:nth-child(3n+2){margin-top:46px;}
-.deck.is-expanded .deck-card{position:relative;aspect-ratio:9/16;}
+/* collapsed, the whole thing folds back into the one big fan */
+.deck.is-collapsed .deck-groups,
+.deck.is-collapsed .deck-group,
+.deck.is-collapsed .deck-group-fan{display:contents;}
 
 /* sits under the deck in both states — the reels shown are a selection */
 .deck-note{
@@ -522,14 +523,10 @@ h1,h2,h3{font-family:'Fraunces',serif;}
   .card-views{font-size:11px;padding:4px 9px;right:7px;bottom:7px;}
   .deck{margin-top:40px;}
   .deck-glow{width:94%;height:250px;filter:blur(30px);}
-  .deck-group{margin-top:54px;}
-  .deck-group-head{padding:0 24px;margin-bottom:18px;gap:10px;}
-  .deck-group-head h3{font-size:22px;}
-  .deck-group-head p{flex-basis:100%;font-size:13px;}
-  .deck-group-grid{grid-template-columns:1fr 1fr;gap:14px;padding:0 24px;}
-  /* two columns here, so stagger every second tile instead of every third */
-  .deck.is-expanded .deck-group-grid > .deck-card:nth-child(3n+2){margin-top:0;}
-  .deck.is-expanded .deck-group-grid > .deck-card:nth-child(2n){margin-top:26px;}
+  /* one mini-deck per row on a phone */
+  .deck-groups{grid-template-columns:1fr;gap:44px;padding:0 24px;}
+  .deck-group-head h3{font-size:21px;}
+  .deck-group-head p{font-size:13px;max-width:none;}
   .request-card{padding:40px 26px 34px;}
 }
 

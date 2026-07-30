@@ -221,7 +221,7 @@ const deckReels = (() => {
   };
 })();
 
-/* ============ WORK DECK — a pile that fans out into themed rows ============ */
+/* ============ WORK DECK — one big fan that opens into small themed ones ============ */
 (() => {
   const deck = document.getElementById('deck');
   const deckOverlay = document.getElementById('deckOverlay');
@@ -230,113 +230,158 @@ const deckReels = (() => {
 
   const cards = Array.from(deck.querySelectorAll('.deck-card'));
   if (!cards.length) return;
+  const groups = Array.from(deck.querySelectorAll('.deck-group'));
+  const groupCards = new Map(groups.map((g) => [g, Array.from(g.querySelectorAll('.deck-card'))]));
+
   let activeCard = null;
   let expanded = false;
 
-  function clearInline(card) {
-    card.style.width = ''; card.style.height = ''; card.style.left = ''; card.style.top = '';
-  }
-
-  /* ---- the fan ----
-     Every card is stacked on the same spot and rotated about a pivot far
-     below it, which is what turns the stack into an arc: same trick a real
-     fanned hand of cards uses. The pivot distance is solved from the
-     container width so the spread always fits, whatever the screen. */
-  /* Two things set the shape: the sweep angle and how far the arc reaches
-     sideways. They are related by rise = reach * tan(SPREAD/4) — so with the
-     reach pinned to the container, a smaller angle is what flattens the arc.
-     The reach is taken from the width first and the pivot solved to match,
-     which is what lets the hand stretch nearly edge to edge. */
-  const SPREAD = 20;               // total degrees, end to end
-  const HALF = (SPREAD / 2) * Math.PI / 180;
+  /* ---- fan geometry ----
+     A stack of cards rotated about a pivot below them becomes an arc. Rise and
+     reach are tied by rise = reach * tan(spread/4), so the sweep angle sets how
+     bent it looks and the container sets how wide. Same maths drives the big
+     fan and the small per-theme ones. */
   const RATIO = 1.72;              // card height / width
-  let fan = null;
+  const SPREAD = 20;               // big fan, end to end
+  const MINI_STEP = 9;             // degrees between neighbours in a mini deck
+  const MINI_MAX = 46;             // and a cap on the total sweep
+  let fan = null;                          // big-fan geometry
+  const miniFans = new Map();              // group -> mini-fan geometry
 
-  function measureFan() {
-    const deckW = deck.clientWidth || 1;
-    const cardW = Math.max(72, Math.min(190, deckW * 0.155));
+  function fanGeometry(boxW, cardW, spread) {
     const cardH = Math.round(cardW * RATIO);
-    const reach = Math.max(60, (deckW * 0.92 - cardW) / 2);   // half the arc's span
-    const radius = reach / Math.sin(HALF);
-    const rise = radius * (1 - Math.cos(HALF));               // how far the ends drop
+    const half = (spread / 2) * Math.PI / 180;
+    const reach = spread > 0 ? Math.max(0, (boxW * 0.92 - cardW) / 2) : 0;
+    const radius = spread > 0 ? reach / Math.sin(half) : 1;
+    const rise = spread > 0 ? radius * (1 - Math.cos(half)) : 0;
     return {
-      cardW: Math.round(cardW),
-      cardH,
-      radius,
-      // pivot distance from the card's top edge, as a % of its own height
+      cardW: Math.round(cardW), cardH, radius, spread,
       originPct: ((radius + cardH / 2) / cardH) * 100,
-      pivotY: 18 + cardH / 2 + radius,                        // from the deck's top
-      height: Math.round(cardH + rise + 92),                  // + room for the cue
-      left: Math.round((deckW - cardW) / 2)
+      pivotY: cardH / 2 + radius,            // from the fan box's top
+      height: Math.round(cardH + rise),
+      left: Math.round((boxW - cardW) / 2)
     };
   }
 
-  function cardAngle(i) {
-    return cards.length < 2 ? 0 : -SPREAD / 2 + (SPREAD / (cards.length - 1)) * i;
+  const angleAt = (i, count, spread) =>
+    count < 2 ? 0 : -spread / 2 + (spread / (count - 1)) * i;
+
+  function placeCard(card, geo, i, count, top) {
+    card.style.width = geo.cardW + 'px';
+    card.style.height = geo.cardH + 'px';
+    card.style.left = geo.left + 'px';
+    card.style.top = top + 'px';
+    gsap.set(card, {
+      rotation: angleAt(i, count, geo.spread),
+      transformOrigin: `50% ${geo.originPct}%`,
+      x: 0, y: 0, scale: 1, zIndex: i + 1
+    });
   }
 
+  /* ---- the big fan, collapsed ---- */
   function layoutFan() {
     if (expanded) return;
-    fan = measureFan();
-    deck.style.setProperty('--fan-h', fan.height + 'px');
-    cards.forEach((card, i) => {
-      card.style.width = fan.cardW + 'px';
-      card.style.height = fan.cardH + 'px';
-      card.style.left = fan.left + 'px';
-      card.style.top = '18px';
-      gsap.set(card, {
-        rotation: cardAngle(i),
-        transformOrigin: `50% ${fan.originPct}%`,
-        x: 0, y: 0, scale: 1, zIndex: i + 1
-      });
-    });
+    const deckW = deck.clientWidth || 1;
+    const cardW = Math.max(72, Math.min(190, deckW * 0.155));
+    fan = fanGeometry(deckW, cardW, SPREAD);
+    fan.top = 18;
+    deck.style.setProperty('--fan-h', (fan.height + fan.top + 92) + 'px');
+    cards.forEach((card, i) => placeCard(card, fan, i, cards.length, fan.top));
     deck.classList.add('is-ready');
   }
 
-  /* Which card is under the pointer, worked out from the angle around the
-     fan's pivot rather than from which element caught the event. The cards
-     overlap heavily and the lifted one grows and jumps to the front, so
-     element hit-testing skips around instead of stepping card by card; the
-     angle is monotonic across the fan, so it never does. */
-  function fanIndexAt(clientX, clientY) {
-    if (!fan || cards.length < 2) return -1;
-    const r = deck.getBoundingClientRect();
-    const px = r.left + fan.left + fan.cardW / 2;      // pivot, in page coords
-    const py = r.top + fan.pivotY;
-    const dx = clientX - px;
-    const dy = py - clientY;                            // upward is positive
-    const dist = Math.hypot(dx, dy);
-    // ignore anything off the band the cards actually occupy
-    if (dist < fan.radius - fan.cardH / 2 - 24 || dist > fan.radius + fan.cardH / 2 + 24) return -1;
-    const deg = Math.atan2(dx, dy) * 180 / Math.PI;
-    const step = SPREAD / (cards.length - 1);
-    const i = Math.round((deg + SPREAD / 2) / step);
-    if (i < 0 || i > cards.length - 1) return -1;
-    return i;
+  /* ---- one small fan per theme, expanded ---- */
+  function layoutMiniFans() {
+    if (!expanded) return;
+    miniFans.clear();
+    groups.forEach((group) => {
+      const box = group.querySelector('.deck-group-fan');
+      const members = groupCards.get(group) || [];
+      if (!box || !members.length) return;
+      const boxW = box.clientWidth || 1;
+      const cardW = Math.max(64, Math.min(168, boxW * 0.44));
+      const spread = Math.min(MINI_MAX, MINI_STEP * (members.length - 1));
+      const geo = fanGeometry(boxW, cardW, spread);
+      box.style.height = geo.height + 'px';
+      miniFans.set(group, geo);
+      members.forEach((card, i) => {
+        if (card === activeCard) return;     // the open one is out of the deck
+        placeCard(card, geo, i, members.length, 0);
+      });
+    });
   }
 
-  /* Hovering slides one card out along its own axis, the way you'd thumb a
-     card up out of a hand. */
+  const relayout = () => (expanded ? layoutMiniFans() : layoutFan());
+
+  /* Put a card back where its mini deck expects it. */
+  function restoreToMini(card) {
+    const group = card.closest('.deck-group');
+    const geo = miniFans.get(group);
+    const members = groupCards.get(group);
+    if (!geo || !members) return false;
+    placeCard(card, geo, members.indexOf(card), members.length, 0);
+    return true;
+  }
+
+  /* ---- which card is under the pointer ----
+     Worked out from the angle around the fan's pivot, not from which element
+     caught the event: the cards overlap and the lifted one jumps to the front,
+     so hit-testing skips around instead of stepping neighbour to neighbour. */
+  function pickFrom(geo, list, boxRect, x, y) {
+    if (!geo || !list.length) return null;
+    if (list.length < 2) return list[0];
+    const px = boxRect.left + geo.left + geo.cardW / 2;
+    const py = boxRect.top + geo.pivotY;
+    const dx = x - px, dy = py - y;
+    const dist = Math.hypot(dx, dy);
+    if (dist < geo.radius - geo.cardH / 2 - 24 || dist > geo.radius + geo.cardH / 2 + 24) return null;
+    const deg = Math.atan2(dx, dy) * 180 / Math.PI;
+    const i = Math.round((deg + geo.spread / 2) / (geo.spread / (list.length - 1)));
+    if (i < 0 || i > list.length - 1) return null;
+    return list[i];
+  }
+
+  function pickCard(x, y) {
+    if (!expanded) {
+      if (!fan) return null;
+      const r = deck.getBoundingClientRect();
+      return pickFrom(fan, cards, { left: r.left, top: r.top + fan.top }, x, y);
+    }
+    for (const group of groups) {
+      const box = group.querySelector('.deck-group-fan');
+      if (!box) continue;
+      const r = box.getBoundingClientRect();
+      if (x < r.left - 12 || x > r.right + 12 || y < r.top - 12 || y > r.bottom + 12) continue;
+      return pickFrom(miniFans.get(group), groupCards.get(group) || [], r, x, y);
+    }
+    return null;
+  }
+
+  function homeZ(card) {
+    const list = expanded ? (groupCards.get(card.closest('.deck-group')) || []) : cards;
+    return list.indexOf(card) + 1;
+  }
+
+  /* Hovering thumbs a card up out of the hand. */
   function liftCard(card, on) {
-    if (expanded || !fan) return;
-    const i = cards.indexOf(card);
+    if (!card || card.classList.contains('is-active')) return;
     gsap.to(card, {
-      y: on ? -26 : 0,
+      y: on ? (expanded ? -16 : -26) : 0,
       scale: on ? 1.06 : 1,
-      zIndex: on ? 200 : i + 1,
-      duration: .38,
-      ease: 'power3.out'
+      zIndex: on ? 200 : homeZ(card),
+      duration: .38, ease: 'power3.out'
     });
   }
 
   /* ---- fold / unfold ---- */
   function expand() {
     if (expanded) return;
-    expanded = true;
     const state = Flip.getState(cards);
+    expanded = true;
     deck.classList.remove('is-collapsed', 'is-lit');
     deck.classList.add('is-expanded');
-    cards.forEach((card) => { clearInline(card); gsap.set(card, { clearProps: 'transform,zIndex' }); });
+    deck.style.removeProperty('--fan-h');
+    layoutMiniFans();
     Flip.from(state, {
       duration: .9, ease: 'power3.inOut', absolute: true, stagger: .012,
       onComplete: () => ScrollTrigger.refresh()
@@ -350,6 +395,10 @@ const deckReels = (() => {
     expanded = false;
     deck.classList.remove('is-expanded');
     deck.classList.add('is-collapsed');
+    groups.forEach((g) => {
+      const box = g.querySelector('.deck-group-fan');
+      if (box) box.style.height = '';
+    });
     layoutFan();
     Flip.from(state, {
       duration: .8, ease: 'power3.inOut', absolute: true,
@@ -358,14 +407,12 @@ const deckReels = (() => {
     });
   }
 
-  /* ---- one card pulled to the middle ---- */
+  /* ---- one card pulled out to play ---- */
   function openCard(card) {
     if (activeCard === card) return;
-    if (activeCard) closeCard(activeCard);
+    if (activeCard) closeCard(activeCard);     // the last one folds back first
     activeCard = card;
-    // capture every card: the one leaving flow makes the rest reflow, and that
-    // shift should glide rather than jump
-    const state = Flip.getState(cards);
+    const state = Flip.getState(card);
     card.classList.add('is-active');
     deck.classList.add('has-active');
     deckOverlay.classList.add('is-visible');
@@ -382,43 +429,42 @@ const deckReels = (() => {
   }
 
   function closeCard(card) {
-    const state = Flip.getState(cards);
+    const state = Flip.getState(card);
     card.classList.remove('is-active');
     card.classList.remove('is-flipped');
     deck.classList.remove('has-active');
     deckOverlay.classList.remove('is-visible');
-    clearInline(card);
-    gsap.set(card, { clearProps: 'transform,zIndex' });
-    Flip.from(state, { duration: .55, ease: 'power3.inOut', scale: true, absolute: true });
     if (activeCard === card) activeCard = null;
+    if (!(expanded && restoreToMini(card))) {
+      card.style.width = ''; card.style.height = ''; card.style.left = ''; card.style.top = '';
+      gsap.set(card, { clearProps: 'transform,zIndex' });
+    }
+    Flip.from(state, { duration: .55, ease: 'power3.inOut', scale: true, absolute: true });
     deckReels.release();
   }
 
   /* ---- wiring ---- */
   layoutFan();
-  window.addEventListener('resize', () => { if (!expanded && !activeCard) layoutFan(); });
+  window.addEventListener('resize', () => { if (!activeCard) relayout(); });
 
   if (hasFineCursor) {
-    let hovered = -1;
-    const setHover = (i) => {
-      if (i === hovered) return;
-      if (hovered >= 0) liftCard(cards[hovered], false);
-      hovered = i;
-      if (i >= 0) liftCard(cards[i], true);
+    let hovered = null;
+    const setHover = (card) => {
+      if (card === hovered) return;
+      if (hovered) liftCard(hovered, false);
+      hovered = card;
+      if (card) liftCard(card, true);
     };
-    deck.addEventListener('mousemove', (e) => {
-      setHover(expanded ? -1 : fanIndexAt(e.clientX, e.clientY));
-    });
-    deck.addEventListener('mouseleave', () => setHover(-1));
+    deck.addEventListener('mousemove', (e) => setHover(activeCard ? null : pickCard(e.clientX, e.clientY)));
+    deck.addEventListener('mouseleave', () => setHover(null));
   }
 
-  /* Clicking the fan lights the whole thing up first, then unfolds — the flare
-     is the acknowledgement, so it has to land before the layout moves. */
+  /* Clicking the closed fan lights the whole thing up first, then unfolds —
+     the flare is the acknowledgement, so it has to land before the layout moves. */
   function lightUpAndExpand() {
     if (expanded || deck.classList.contains('is-lit')) return;
     deck.classList.add('is-lit');
     if (reduceMotion) { expand(); deck.classList.remove('is-lit'); return; }
-    // the whole hand lifts along the arc, edges last
     gsap.to(cards, { y: -20, duration: .34, ease: 'power2.out', stagger: { each: .014, from: 'center' } });
     gsap.delayedCall(.54, () => {
       gsap.set(cards, { y: 0 });
@@ -434,14 +480,15 @@ const deckReels = (() => {
 
     const closeBtn = e.target.closest('.card-close');
     const cardEl = e.target.closest('.deck-card');
-    if (!cardEl) return;
-    if (closeBtn) { e.stopPropagation(); closeCard(cardEl); return; }
-    if (cardEl.classList.contains('is-active')) {
+    if (closeBtn && cardEl) { e.stopPropagation(); closeCard(cardEl); return; }
+    if (cardEl && cardEl.classList.contains('is-active')) {
       // flipped to the request side — hold the reel, resume on the way back
       deckReels.freeze(cardEl.classList.toggle('is-flipped'));
-    } else {
-      openCard(cardEl);
+      return;
     }
+    // pick by angle, same as the hover, so you get the card you can see
+    const picked = e.target.closest('.deck-group-fan') ? pickCard(e.clientX, e.clientY) : cardEl;
+    if (picked) openCard(picked);
   });
 
   if (collapseBtn) collapseBtn.addEventListener('click', collapse);
