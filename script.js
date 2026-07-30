@@ -242,10 +242,15 @@ const deckReels = (() => {
      below it, which is what turns the stack into an arc: same trick a real
      fanned hand of cards uses. The pivot distance is solved from the
      container width so the spread always fits, whatever the screen. */
-  const SPREAD = 104;              // total degrees, end to end
+  /* Halving the bend means halving the angle *and* pushing the pivot further
+     out: on its own, a smaller angle would just bunch the cards into a
+     narrower fan rather than flatten the one we have. The pivot below keeps
+     the arc's horizontal reach where it was, so the hand stays the same width
+     and only the curve relaxes. */
+  const SPREAD = 52;               // total degrees, end to end
   const HALF = (SPREAD / 2) * Math.PI / 180;
   const RATIO = 1.72;              // card height / width
-  const PIVOT = 1.62;              // pivot sits this many card-heights below the top edge
+  const PIVOT = 2.52;              // pivot sits this many card-heights below the top edge
   let fan = null;
 
   function measureFan() {
