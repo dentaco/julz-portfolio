@@ -535,11 +535,13 @@ h1,h2,h3{font-family:'Fraunces',serif;}
 .artist-sub{margin-top:14px;font-size:15.5px;color:var(--soft);max-width:44ch;line-height:1.6;}
 .polaroid-row{
   max-width:1240px;margin:80px auto 0;padding:0 48px;
-  display:flex;justify-content:center;gap:40px;flex-wrap:wrap;
+  display:flex;justify-content:center;gap:30px;flex-wrap:wrap;
 }
+/* 260px rather than 300 so the four of them stay on one line: the row has
+   1144px of usable width, and 4x260 + 3x30 comes to 1130. */
 .polaroid{
-  background:#fff;padding:16px 16px 44px;border-radius:6px;box-shadow:0 20px 50px rgba(14,42,58,.16);
-  width:300px;transition:transform .4s var(--ease),box-shadow .4s var(--ease);
+  background:#fff;padding:14px 14px 40px;border-radius:6px;box-shadow:0 20px 50px rgba(14,42,58,.16);
+  width:260px;transition:transform .4s var(--ease),box-shadow .4s var(--ease);
 }
 .polaroid img{border-radius:2px;aspect-ratio:4/5;object-fit:cover;width:100%;}
 .polaroid figcaption{
@@ -548,12 +550,14 @@ h1,h2,h3{font-family:'Fraunces',serif;}
 .p-1{transform:rotate(-6deg);}
 .p-2{transform:rotate(3deg) translateY(20px);}
 .p-3{transform:rotate(-3deg);}
+.p-4{transform:rotate(4deg) translateY(16px);}
 .polaroid:hover{transform:rotate(0deg) translateY(-6px) scale(1.03);box-shadow:0 28px 60px rgba(14,42,58,.22);z-index:2;}
 
 @media(max-width:820px){
   .polaroid-row{gap:26px;}
   .polaroid{width:80vw;max-width:320px;}
   .p-2{transform:rotate(3deg);}
+  .p-4{transform:rotate(4deg);}
 }
 
 /* ============ ABOUT ============ */
