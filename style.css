@@ -444,6 +444,19 @@ h1,h2,h3{font-family:'Fraunces',serif;}
   display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);
 }
 .deck-card.is-active .card-close{opacity:1;pointer-events:auto;}
+/* sound toggle, only on the reel that has been pulled out */
+.card-sound{
+  position:absolute;top:12px;right:52px;z-index:3;width:32px;height:32px;border-radius:50%;
+  background:rgba(14,42,58,.55);border:none;font-size:14px;line-height:1;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;
+  transition:opacity .3s ease,background .3s ease;
+}
+.deck-card.is-active .card-sound{opacity:1;pointer-events:auto;}
+.card-sound:hover{background:var(--pink-deep);}
+.card-sound .snd-off{display:none;}
+.deck.is-hushed .card-sound .snd-on{display:none;}
+.deck.is-hushed .card-sound .snd-off{display:inline;}
+
 .card-close:hover{background:var(--pink-deep);}
 .card-back{
   background:#0b1620;color:#fff;padding:28px;display:flex;flex-direction:column;

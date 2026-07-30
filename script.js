@@ -194,6 +194,9 @@ if (reduceMotion) {
 const deckReels = (() => {
   const inView = new Set();
   let solo = null, frozen = false;
+  /* The fan is decoration and stays silent; a reel you deliberately pull out
+     plays with its audio, which is the whole point of opening it. */
+  let soundOn = true;
 
   const all = () => document.querySelectorAll('.card-video');
   const load = (v) => { if (v && !v.src) { v.src = v.dataset.videoSrc; v.load(); } };
@@ -220,13 +223,22 @@ const deckReels = (() => {
     );
   }
 
+  function start(v) {
+    if (!v.paused) return;
+    v.play().catch(() => {
+      // a browser that refuses to start unmuted still gets to show the reel
+      if (!v.muted) { v.muted = true; v.play().catch(() => {}); }
+    });
+  }
+
   function sync() {
     const awake = document.visibilityState === 'visible' && !frozen;
     const near = solo ? null : ambientSet();
     all().forEach((v) => {
+      v.muted = !(v === solo && soundOn);
       const ambient = !reduceMotion && (!near || near.has(v));
       const wanted = awake && inView.has(v) && (solo ? v === solo : ambient);
-      if (wanted) { load(v); if (v.paused) v.play().catch(() => {}); }
+      if (wanted) { load(v); start(v); }
       else if (!v.paused) v.pause();
     });
   }
@@ -251,7 +263,9 @@ const deckReels = (() => {
       sync();
     },
     release() { solo = null; frozen = false; sync(); },
-    freeze(on) { frozen = on; sync(); }
+    freeze(on) { frozen = on; sync(); },
+    get soundOn() { return soundOn; },
+    toggleSound() { soundOn = !soundOn; sync(); return soundOn; }
   };
 })();
 
@@ -464,6 +478,7 @@ const deckReels = (() => {
     gsap.set(card, { rotation: 0, scale: 1, x: 0, y: 0, zIndex: 1000 });
     Flip.from(state, { duration: .65, ease: 'power3.inOut', scale: true, absolute: true });
     deckReels.solo(card.querySelector('.card-video'));
+    deck.classList.toggle('is-hushed', !deckReels.soundOn);
   }
 
   function closeCard(card) {
@@ -516,6 +531,12 @@ const deckReels = (() => {
     if (e.target.closest('.deck-collapse')) return;  // handled on the button
     if (!expanded) { lightUpAndExpand(); return; }
 
+    const soundBtn = e.target.closest('.card-sound');
+    if (soundBtn) {
+      e.stopPropagation();
+      deck.classList.toggle('is-hushed', !deckReels.toggleSound());
+      return;
+    }
     const closeBtn = e.target.closest('.card-close');
     const cardEl = e.target.closest('.deck-card');
     if (closeBtn && cardEl) { e.stopPropagation(); closeCard(cardEl); return; }
