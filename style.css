@@ -605,6 +605,20 @@ h1,h2,h3{font-family:'Fraunces',serif;}
   padding:15px 26px;border-radius:100px;transition:background .3s ease;
 }
 .about-cta span{transition:transform .3s var(--ease);display:inline-block;}
+.about-actions{display:flex;align-items:center;gap:18px;flex-wrap:wrap;}
+/* secondary to the main CTA — an outline rather than a filled pill */
+.about-kit{
+  display:inline-flex;align-items:center;gap:9px;text-decoration:none;
+  border:2px solid rgba(14,42,58,.22);border-radius:100px;padding:14px 24px;
+  font-weight:700;font-size:15px;color:var(--ink);
+  transition:border-color .3s ease,color .3s ease,background .3s ease;
+}
+.about-kit span{
+  font-size:10.5px;letter-spacing:1.4px;padding:3px 8px;border-radius:100px;
+  background:var(--ink);color:#fff;transition:background .3s ease;
+}
+.about-kit:hover{border-color:var(--pink-deep);color:var(--pink-deep);}
+.about-kit:hover span{background:var(--pink-deep);}
 .about-cta:hover{background:var(--pink-deep);}
 .about-cta:hover span{transform:translateX(5px);}
 
