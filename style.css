@@ -672,8 +672,61 @@ h1,h2,h3{font-family:'Fraunces',serif;}
   .growth-text p{margin-left:auto;margin-right:auto;}
 }
 
+/* ============ UGC SERVICES ============ */
+.services{
+  padding:120px 48px 130px;
+  background:linear-gradient(180deg,#a9def7 0%,#cfeafb 40%,var(--paper) 100%);
+}
+.services .section-head{text-align:center;}
+.services .eyebrow{justify-content:center;}
+.services .section-head h2{margin:0 auto;}
+.svc-grid{
+  max-width:1080px;margin:54px auto 0;
+  display:grid;grid-template-columns:repeat(2,1fr);gap:22px;
+}
+.svc{
+  background:#fff;border-radius:20px;padding:30px 28px;
+  box-shadow:0 18px 44px rgba(14,42,58,.13);
+  transition:transform .4s var(--ease),box-shadow .4s var(--ease);
+}
+.svc:hover{transform:translateY(-6px);box-shadow:0 26px 60px rgba(14,42,58,.2);}
+.svc h3{font-family:'Fraunces',serif;font-size:22px;font-weight:600;color:var(--ink);}
+.svc p{margin-top:12px;font-size:15px;line-height:1.65;color:var(--soft);}
+
+/* the three things a brand checks before it asks for a rate */
+.svc-facts{
+  max-width:1080px;margin:22px auto 0;
+  display:grid;grid-template-columns:repeat(3,1fr);gap:22px;
+}
+.svc-fact{
+  border:2px solid rgba(14,42,58,.16);border-radius:20px;padding:22px 24px;
+}
+.svc-fact span{
+  display:block;font-size:11px;letter-spacing:2px;text-transform:uppercase;
+  font-weight:700;color:var(--pink-deep);
+}
+.svc-fact b{display:block;margin-top:9px;font-size:16.5px;line-height:1.4;color:var(--ink);}
+.svc-fact i{display:block;margin-top:5px;font-style:normal;font-size:13.5px;color:var(--soft);}
+
+.svc-cta-wrap{text-align:center;margin-top:44px;}
+.svc-cta{
+  display:inline-flex;align-items:center;gap:12px;text-decoration:none;
+  background:var(--ink);color:#fff;font-weight:700;font-size:16px;
+  padding:19px 34px;border-radius:100px;
+  transition:background .3s ease;
+}
+.svc-cta span{transition:transform .3s var(--ease);display:inline-block;}
+.svc-cta:hover{background:var(--pink-deep);}
+.svc-cta:hover span{transform:translateX(5px);}
+
+@media(max-width:820px){
+  .services{padding:90px 24px 100px;}
+  .svc-grid,.svc-facts{grid-template-columns:1fr;gap:16px;}
+  .svc{padding:24px 22px;}
+}
+
 /* ============ BOOK ============ */
-.book{padding:130px 48px 150px;background:linear-gradient(180deg,#a9def7 0%,#d9f0fc 30%,var(--paper) 70%);text-align:center;}
+.book{padding:130px 48px 150px;background:var(--paper);text-align:center;}
 .book .section-head{text-align:center;}
 .book .eyebrow{justify-content:center;}
 .book .section-head h2{margin:0 auto;}
